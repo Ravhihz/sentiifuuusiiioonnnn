@@ -1,0 +1,453 @@
+{% extends 'base.html' %}
+
+{% block title %}Train Model - {{ dataset.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="max-width: 1200px;">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-cogs"></i> Train Model</h2>
+            <p class="text-muted">{{ dataset.name }}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'core:dataset_label' dataset.pk %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Labeling
+            </a>
+        </div>
+    </div>
+
+    <!-- Training Status -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <i class="fas fa-check-circle"></i> Ready to Train
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h3 class="text-success">{{ labeled_count }}</h3>
+                                <small class="text-muted">Labeled Reviews</small>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <h6>Label Distribution:</h6>
+                            <div class="row">
+                                {% for item in label_distribution %}
+                                <div class="col-md-4 mb-2">
+                                    <span class="badge bg-{% if item.label == 'positive' %}success{% elif item.label == 'negative' %}danger{% else %}secondary{% endif %} me-2">
+                                        {{ item.label|title }}
+                                    </span>
+                                    <strong>{{ item.count }}</strong> reviews
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Training Configuration -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-sliders-h"></i> Training Configuration
+                </div>
+                <div class="card-body">
+                    <form id="trainingForm">
+                        {% csrf_token %}
+                        
+                        <!-- Test Size -->
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Test Size (Train-Test Split)</strong></label>
+                            <input type="number" class="form-control" name="test_size" id="test_size" value="0.2" min="0.1" max="0.4" step="0.05">
+                            <small class="text-muted">Recommended: 0.2 (20% for testing, 80% for training)</small>
+                        </div>
+
+                        <!-- PCA Components -->
+                        <div class="mb-3">
+                            <label class="form-label"><strong>PCA Components (Dimensionality Reduction)</strong></label>
+                            <input type="number" class="form-control" name="n_components" id="n_components" value="100" min="50" max="200" step="10">
+                            <small class="text-muted">Reduce 300 dimensions to N components. Recommended: 100</small>
+                        </div>
+
+                        <!-- SVM Kernel -->
+                        <div class="mb-3">
+                            <label class="form-label"><strong>SVM Kernel</strong></label>
+                            <select class="form-select" name="kernel" id="kernel">
+                                <option value="rbf" selected>RBF (Radial Basis Function) - Recommended</option>
+                                <option value="linear">Linear</option>
+                                <option value="poly">Polynomial</option>
+                            </select>
+                            <small class="text-muted">RBF works best for most cases</small>
+                        </div>
+
+                        <!-- SVM C Parameter -->
+                        <div class="mb-3">
+                            <label class="form-label"><strong>SVM C Parameter (Regularization)</strong></label>
+                            <input type="number" class="form-control" name="C" id="C" value="1.0" min="0.1" max="10" step="0.1">
+                            <small class="text-muted">Higher C = less regularization. Recommended: 1.0</small>
+                        </div>
+
+                        <!-- Max Iterations -->
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Max Iterations (SMO Algorithm)</strong></label>
+                            <input type="number" class="form-control" name="max_iter" id="max_iter" value="1000" min="500" max="5000" step="100">
+                            <small class="text-muted">Maximum training iterations. Recommended: 1000</small>
+                        </div>
+                        
+                        <!-- Apply SMOTE -->
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="apply_smote" name="apply_smote" value="true" checked>
+                                <label class="form-check-label" for="apply_smote">
+                                    <strong>Apply SMOTE (Handle Imbalanced Data)</strong>
+                                </label>
+                            </div>
+                            <small class="text-muted">
+                                Automatically balance minority classes using synthetic oversampling.
+                            </small>
+                        </div>
+
+                        <!-- Extract LDA Topics (NEW!) -->
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="extract_lda" name="extract_lda" value="true" checked>
+                                <label class="form-check-label" for="extract_lda">
+                                    <strong>Extract Topics with LDA</strong>
+                                </label>
+                            </div>
+                            <small class="text-muted">
+                                Discover hidden topics in reviews using Latent Dirichlet Allocation.
+                            </small>
+                        </div>
+
+                        <!-- Number of Topics (NEW!) -->
+                        <div class="mb-3" id="topicsDiv">
+                            <label class="form-label"><strong>Number of Topics</strong></label>
+                            <input type="number" class="form-control" name="n_topics" id="n_topics" value="5" min="2" max="10" step="1">
+                            <small class="text-muted">Number of topics to discover (recommended: 3-7)</small>
+                        </div>
+
+                        <!-- Start Training Button -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success btn-lg" id="trainBtn">
+                                <i class="fas fa-play"></i> Start Training
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Panel -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-info-circle"></i> Training Information
+                </div>
+                <div class="card-body">
+                    <h6><strong>Training Pipeline:</strong></h6>
+                    <ol>
+                        <li><strong>Load Data</strong> - Load {{ labeled_count }} labeled reviews</li>
+                        <li><strong>Split Data</strong> - Train/Test split (stratified)</li>
+                        <li><strong>PCA</strong> - Reduce dimensions (300 → N)</li>
+                        <li><strong>SVM Training</strong> - Train classifier with SMO algorithm</li>
+                        <li><strong>Evaluation</strong> - Calculate accuracy, precision, recall, F1</li>
+                        <li><strong>Save Model</strong> - Save trained model to disk</li>
+                    </ol>
+
+                    <div class="alert alert-info mt-3">
+                        <small>
+                            <i class="fas fa-lightbulb"></i> <strong>Tip:</strong><br>
+                            - More labeled data = better accuracy<br>
+                            - Balanced classes = better performance<br>
+                            - RBF kernel works best for most cases<br>
+                            - Training may take 1-5 minutes depending on data size
+                        </small>
+                    </div>
+
+                    <div class="alert alert-warning mt-2">
+                        <small>
+                            <i class="fas fa-exclamation-triangle"></i> <strong>Note:</strong><br>
+                            This uses <strong>Manual SVM + PCA</strong> implementation (no sklearn).<br>
+                            All algorithms are implemented from scratch for transparency!
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Existing Models -->
+    {% if existing_models %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-history"></i> Previously Trained Models
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Created</th>
+                                    <th>Accuracy</th>
+                                    <th>Precision</th>
+                                    <th>Recall</th>
+                                    <th>F1-Score</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for model in existing_models %}
+                                <tr>
+                                    <td><strong>{{ model.name }}</strong></td>
+                                    <td>{{ model.created_at|date:"Y-m-d H:i" }}</td>
+                                    <td><span class="badge bg-primary">{{ model.accuracy|floatformat:4 }}</span></td>
+                                    <td>{{ model.precision|floatformat:4 }}</td>
+                                    <td>{{ model.recall|floatformat:4 }}</td>
+                                    <td>{{ model.f1_score|floatformat:4 }}</td>
+                                    <td>
+                                        <a href="{% url 'core:model_detail' model.pk %}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Training Modal -->
+<div class="modal fade" id="trainingModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-cogs"></i> Training in Progress...</h5>
+            </div>
+            <div class="modal-body text-center py-5">
+                <div class="spinner-border text-primary mb-3" style="width: 4rem; height: 4rem;" role="status">
+                    <span class="visually-hidden">Training...</span>
+                </div>
+                <h5 id="trainingStatus">Initializing training...</h5>
+                <p class="text-muted" id="trainingDetails">Please wait, this may take a few minutes.</p>
+                
+                <div class="progress mt-4" style="height: 25px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                         role="progressbar" 
+                         style="width: 0%;" 
+                         id="trainingProgress">0%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Results Modal -->
+<div class="modal fade" id="resultsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="fas fa-check-circle"></i> Training Complete!</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="resultsBody">
+                <!-- Results will be inserted here -->
+            </div>
+            <div class="modal-footer">
+                <a href="{% url 'core:preliminary_analysis' dataset.pk %}" class="btn btn-secondary">
+                    <i class="fas fa-chart-bar"></i> View Analysis
+                </a>
+                <button type="button" class="btn btn-success" id="viewModelBtn">
+                    <i class="fas fa-eye"></i> View Model Details
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Toggle topics input based on checkbox
+document.getElementById('extract_lda').addEventListener('change', function() {
+    document.getElementById('topicsDiv').style.display = this.checked ? 'block' : 'none';
+});
+
+document.getElementById('trainingForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Get form data
+    const formData = new FormData(this);
+    
+    // Show training modal
+    const trainingModal = new bootstrap.Modal(document.getElementById('trainingModal'));
+    trainingModal.show();
+    
+    // Simulate progress
+    let progress = 0;
+    const progressBar = document.getElementById('trainingProgress');
+    const statusText = document.getElementById('trainingStatus');
+    const detailsText = document.getElementById('trainingDetails');
+    
+    const progressInterval = setInterval(() => {
+        progress += Math.random() * 10;
+        if (progress > 90) progress = 90;
+        
+        progressBar.style.width = progress + '%';
+        progressBar.textContent = Math.round(progress) + '%';
+        
+        // Update status based on progress
+        if (progress < 20) {
+            statusText.textContent = 'Loading and preparing data...';
+            detailsText.textContent = 'Reading labeled reviews from database';
+        } else if (progress < 40) {
+            statusText.textContent = 'Splitting data...';
+            detailsText.textContent = 'Creating train/test sets (stratified)';
+        } else if (progress < 60) {
+            statusText.textContent = 'Applying PCA...';
+            detailsText.textContent = 'Reducing dimensionality with eigenvalue decomposition';
+        } else if (progress < 90) {
+            statusText.textContent = 'Training SVM...';
+            detailsText.textContent = 'Running SMO algorithm to find support vectors';
+        }
+    }, 500);
+    
+    // Start training
+    fetch('{% url "core:start_training" dataset.pk %}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        clearInterval(progressInterval);
+        progressBar.style.width = '100%';
+        progressBar.textContent = '100%';
+        
+        if (data.status === 'completed') {
+            // Hide training modal
+            setTimeout(() => {
+                trainingModal.hide();
+                
+                // Show results
+                showResults(data.results);
+            }, 1000);
+        } else if (data.status === 'error') {
+            clearInterval(progressInterval);
+            statusText.textContent = 'Training Failed!';
+            statusText.className = 'text-danger';
+            detailsText.textContent = data.message;
+            
+            console.error('Training error:', data.message);
+            if (data.traceback) {
+                console.error('Traceback:', data.traceback);
+            }
+            
+            setTimeout(() => {
+                trainingModal.hide();
+                alert('Training failed: ' + data.message);
+            }, 2000);
+        }
+    })
+    .catch(error => {
+        clearInterval(progressInterval);
+        console.error('Network error:', error);
+        
+        statusText.textContent = 'Network Error!';
+        statusText.className = 'text-danger';
+        detailsText.textContent = error.message;
+        
+        setTimeout(() => {
+            trainingModal.hide();
+            alert('Network error: ' + error.message);
+        }, 2000);
+    });
+});
+
+function showResults(results) {
+    const resultsBody = document.getElementById('resultsBody');
+    
+    resultsBody.innerHTML = `
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted mb-1">Test Accuracy</h6>
+                        <h3 class="text-success">${(results.test_accuracy * 100).toFixed(2)}%</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted mb-1">Precision</h6>
+                        <h3>${results.precision.toFixed(4)}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted mb-1">Recall</h6>
+                        <h3>${results.recall.toFixed(4)}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted mb-1">F1-Score</h6>
+                        <h3>${results.f1_score.toFixed(4)}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <h6><strong>Training Details:</strong></h6>
+                <ul>
+                    <li>Training samples: ${results.train_samples}</li>
+                    <li>Test samples: ${results.test_samples}</li>
+                    <li>Original features: ${results.n_features_original}</li>
+                    <li>PCA features: ${results.n_features_pca}</li>
+                    <li>PCA variance: ${(results.pca_variance * 100).toFixed(2)}%</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6><strong>Model Information:</strong></h6>
+                <ul>
+                    <li>Support vectors: ${results.n_support_vectors}</li>
+                    <li>Training time: ${results.training_time.toFixed(2)}s</li>
+                    <li>Train accuracy: ${(results.train_accuracy * 100).toFixed(2)}%</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i> Model trained successfully and saved to database!
+        </div>
+    `;
+    
+    // Set model ID for view button
+    document.getElementById('viewModelBtn').onclick = function() {
+        window.location.href = `/models/${results.model_id}/`;
+    };
+    
+    // Show results modal
+    const resultsModal = new bootstrap.Modal(document.getElementById('resultsModal'));
+    resultsModal.show();
+}
+</script>
+{% endblock %}

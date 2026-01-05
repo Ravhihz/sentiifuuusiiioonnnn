@@ -1,0 +1,296 @@
+{
+  "topic_1": [
+    {
+      "word": "makan",
+      "probability": 0.10062960196350443
+    },
+    {
+      "word": "gratis",
+      "probability": 0.09897556290684026
+    },
+    {
+      "word": "bergizi",
+      "probability": 0.0927862554690001
+    },
+    {
+      "word": "program",
+      "probability": 0.05671753281400064
+    },
+    {
+      "word": "mbg",
+      "probability": 0.03286735673887525
+    },
+    {
+      "word": "sekolah",
+      "probability": 0.015153132002987941
+    },
+    {
+      "word": "papua",
+      "probability": 0.01461957101696724
+    },
+    {
+      "word": "siswa",
+      "probability": 0.010777931917618184
+    },
+    {
+      "word": "anak",
+      "probability": 0.008056770888912603
+    },
+    {
+      "word": "menu",
+      "probability": 0.0067762245224629175
+    }
+  ],
+  "topic_2": [
+    {
+      "word": "makan",
+      "probability": 0.09070538675271131
+    },
+    {
+      "word": "gratis",
+      "probability": 0.09016760777986914
+    },
+    {
+      "word": "bergizi",
+      "probability": 0.08949538406381644
+    },
+    {
+      "word": "program",
+      "probability": 0.06793941023572644
+    },
+    {
+      "word": "anak",
+      "probability": 0.056601236891637534
+    },
+    {
+      "word": "indonesia",
+      "probability": 0.030115622479161063
+    },
+    {
+      "word": "makanbergizigratis",
+      "probability": 0.026754503898897553
+    },
+    {
+      "word": "gizi",
+      "probability": 0.01989782199515999
+    },
+    {
+      "word": "mbg",
+      "probability": 0.01904633862149323
+    },
+    {
+      "word": "dukung",
+      "probability": 0.013265214663439993
+    }
+  ],
+  "topic_3": [
+    {
+      "word": "program",
+      "probability": 0.05818685987745427
+    },
+    {
+      "word": "mbg",
+      "probability": 0.055056129522787246
+    },
+    {
+      "word": "anak",
+      "probability": 0.04892884297151035
+    },
+    {
+      "word": "makan",
+      "probability": 0.04798962386511025
+    },
+    {
+      "word": "bergizi",
+      "probability": 0.046782056442595824
+    },
+    {
+      "word": "gratis",
+      "probability": 0.04423274743950982
+    },
+    {
+      "word": "sehat",
+      "probability": 0.02352520237935507
+    },
+    {
+      "word": "indonesia",
+      "probability": 0.021915112482669172
+    },
+    {
+      "word": "makanbergizigratis",
+      "probability": 0.01954470235699271
+    },
+    {
+      "word": "gizi",
+      "probability": 0.01556420233463035
+    }
+  ],
+  "topic_4": [
+    {
+      "word": "mbg",
+      "probability": 0.07669172932330827
+    },
+    {
+      "word": "ya",
+      "probability": 0.014731272626009468
+    },
+    {
+      "word": "keracunan",
+      "probability": 0.012781954887218045
+    },
+    {
+      "word": "program",
+      "probability": 0.009718741297688667
+    },
+    {
+      "word": "bapak",
+      "probability": 0.00910609857978279
+    },
+    {
+      "word": "rakyat",
+      "probability": 0.008994708994708995
+    },
+    {
+      "word": "nya",
+      "probability": 0.0088276246170983
+    },
+    {
+      "word": "orang",
+      "probability": 0.0088276246170983
+    },
+    {
+      "word": "banget",
+      "probability": 0.008771929824561403
+    },
+    {
+      "word": "anak",
+      "probability": 0.008549150654413811
+    }
+  ],
+  "topic_5": [
+    {
+      "word": "sppg",
+      "probability": 0.03387576279142544
+    },
+    {
+      "word": "2025",
+      "probability": 0.026208731028008136
+    },
+    {
+      "word": "muara",
+      "probability": 0.017681114066656234
+    },
+    {
+      "word": "batang",
+      "probability": 0.017446409012674073
+    },
+    {
+      "word": "gadis",
+      "probability": 0.01736817399468002
+    },
+    {
+      "word": "desa",
+      "probability": 0.01533406352683461
+    },
+    {
+      "word": "melaksanakan",
+      "probability": 0.014942888436864341
+    },
+    {
+      "word": "kegiatan",
+      "probability": 0.012126427789078392
+    },
+    {
+      "word": "polsek",
+      "probability": 0.012126427789078392
+    },
+    {
+      "word": "kec",
+      "probability": 0.010718197465185417
+    }
+  ],
+  "topic_6": [
+    {
+      "word": "program",
+      "probability": 0.042690129944193245
+    },
+    {
+      "word": "mbg",
+      "probability": 0.04244572080329138
+    },
+    {
+      "word": "makan",
+      "probability": 0.03788341683978981
+    },
+    {
+      "word": "bergizi",
+      "probability": 0.03759827284207096
+    },
+    {
+      "word": "gratis",
+      "probability": 0.03368772658764104
+    },
+    {
+      "word": "gizi",
+      "probability": 0.028514399771884802
+    },
+    {
+      "word": "prabowo",
+      "probability": 0.025051936942441646
+    },
+    {
+      "word": "nasional",
+      "probability": 0.020163754124404253
+    },
+    {
+      "word": "badan",
+      "probability": 0.01694570043586297
+    },
+    {
+      "word": "presiden",
+      "probability": 0.015642185017719662
+    }
+  ],
+  "topic_7": [
+    {
+      "word": "mbg",
+      "probability": 0.08096709332548674
+    },
+    {
+      "word": "keracunan",
+      "probability": 0.025746652935118436
+    },
+    {
+      "word": "makanan",
+      "probability": 0.014467166887352263
+    },
+    {
+      "word": "siswa",
+      "probability": 0.014320043156294444
+    },
+    {
+      "word": "dapur",
+      "probability": 0.01162277475356775
+    },
+    {
+      "word": "menu",
+      "probability": 0.011034279829336472
+    },
+    {
+      "word": "sppg",
+      "probability": 0.009514001275072336
+    },
+    {
+      "word": "1",
+      "probability": 0.008042763964494139
+    },
+    {
+      "word": "amp",
+      "probability": 0.00765043401500662
+    },
+    {
+      "word": "2",
+      "probability": 0.007503310283948801
+    }
+  ]
+}

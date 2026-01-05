@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}Datasets - SentiFusion{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-database"></i> Datasets</h2>
+            <p class="text-muted">Manage your sentiment analysis datasets</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'core:dataset_upload' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Upload New Dataset
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            {% if datasets %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Total Reviews</th>
+                                <th>Labeled</th>
+                                <th>Preprocessed</th>
+                                <th>Uploaded</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dataset in datasets %}
+                            <tr>
+                                <td>
+                                    <strong>{{ dataset.name }}</strong>
+                                    {% if dataset.description %}
+                                        <br><small class="text-muted">{{ dataset.description|truncatewords:15 }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>{{ dataset.total_reviews }}</td>
+                                <td>
+                                    {{ dataset.labeled_count }} 
+                                    <small class="text-muted">({% if dataset.total_reviews > 0 %}{% widthratio dataset.labeled_count dataset.total_reviews 100 %}{% else %}0{% endif %}%)</small>
+                                </td>
+                                <td>
+                                    {% if dataset.is_preprocessed %}
+                                        <span class="badge bg-success">Yes</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">No</span>
+                                    {% endif %}
+                                </td>
+                                <td><small>{{ dataset.uploaded_at|date:"d M Y H:i" }}</small></td>
+                                <td>
+                                    <a href="{% url 'core:dataset_detail' dataset.pk %}" class="btn btn-sm btn-primary" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-danger" 
+                                            onclick="confirmDelete({{ dataset.pk }}, '{{ dataset.name|escapejs }}')"
+                                            title="Delete Dataset">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    
+                                    <!-- Hidden delete form -->
+                                    <form method="post" action="{% url 'core:dataset_delete' dataset.pk %}" 
+                                          id="deleteForm{{ dataset.pk }}" style="display: none;">
+                                        {% csrf_token %}
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-state text-center py-5">
+                    <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+                    <h4>No datasets yet</h4>
+                    <p class="text-muted">Upload your first dataset to get started with sentiment analysis</p>
+                    <a href="{% url 'core:dataset_upload' %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-upload"></i> Upload Dataset
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(datasetId, datasetName) {
+    confirmAction(
+        'Delete Dataset',
+        `Are you sure you want to delete "${datasetName}"? This will permanently delete all reviews, models, and predictions. This action cannot be undone!`,
+        function() {
+            showLoading('Deleting dataset...');
+            document.getElementById('deleteForm' + datasetId).submit();
+        },
+        'Delete Permanently',
+        'btn-danger'
+    );
+}
+</script>
+{% endblock %}

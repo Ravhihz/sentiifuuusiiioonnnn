@@ -1,0 +1,403 @@
+{% extends 'base.html' %}
+
+{% block title %}Batch Prediction - {{ dataset.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="max-width: 1200px;">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-magic"></i> Batch Prediction</h2>
+            <p class="text-muted">{{ dataset.name }}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'core:dataset_detail' dataset.pk %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Dataset
+            </a>
+        </div>
+    </div>
+
+    <!-- Current Status -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white" style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);">
+                <div class="card-body text-center">
+                    <h3>{{ summary.total_reviews }}</h3>
+                    <p class="mb-0"><i class="fas fa-database"></i> Total Reviews</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white" style="background: linear-gradient(135deg, #059669 0%, #047857 100%);">
+                <div class="card-body text-center">
+                    <h3>{{ summary.labeled_count }}</h3>
+                    <p class="mb-0"><i class="fas fa-tags"></i> Manual Labels</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white" style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);">
+                <div class="card-body text-center">
+                    <h3>{{ summary.predicted_count }}</h3>
+                    <p class="mb-0"><i class="fas fa-robot"></i> Predicted</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);">
+                <div class="card-body text-center">
+                    <h3>{{ summary.unlabeled_count }}</h3>
+                    <p class="mb-0"><i class="fas fa-question"></i> Unlabeled</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info & Instructions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <h5><i class="fas fa-info-circle"></i> What is Batch Prediction?</h5>
+                <p class="mb-2">
+                    Batch prediction applies your trained model to all unlabeled reviews in the dataset at once.
+                    This is useful for:
+                </p>
+                <ul class="mb-0">
+                    <li><strong>Complete Dataset Analysis:</strong> Get sentiment predictions for all reviews</li>
+                    <li><strong>Time Saving:</strong> Automatically label thousands of reviews in seconds</li>
+                    <li><strong>Quality Check:</strong> Compare predictions with manual labels to validate model</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Model Selection & Prediction Form -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-brain"></i> Select Model & Start Prediction
+                </div>
+                <div class="card-body">
+                    {% if available_models %}
+                    <form id="batchPredictionForm">
+                        {% csrf_token %}
+                        
+                        <!-- Model Selection -->
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Select Trained Model:</strong></label>
+                            <select class="form-select" name="model_id" id="model_id" required>
+                                <option value="">-- Choose a model --</option>
+                                {% for model in available_models %}
+                                <option value="{{ model.pk }}">
+                                    {{ model.name }} - Accuracy: {{ model.accuracy|floatformat:2 }}%
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">
+                                Select the model you want to use for predictions
+                            </small>
+                        </div>
+
+                        <!-- Overwrite Option -->
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="overwrite" name="overwrite" value="true">
+                                <label class="form-check-label" for="overwrite">
+                                    <strong>Overwrite Existing Predictions</strong>
+                                </label>
+                            </div>
+                            <small class="text-muted">
+                                If checked, will re-predict reviews that already have predictions.
+                                Otherwise, only predicts new unlabeled reviews.
+                            </small>
+                        </div>
+
+                        <!-- Start Button -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg" id="startBtn">
+                                <i class="fas fa-play"></i> Start Batch Prediction
+                            </button>
+                        </div>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        <strong>No trained models available!</strong><br>
+                        Please train a model first before running batch predictions.
+                        <div class="mt-2">
+                            <a href="{% url 'core:train_model' dataset.pk %}" class="btn btn-warning">
+                                <i class="fas fa-cogs"></i> Train Model
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <i class="fas fa-chart-pie"></i> Current Distribution
+                </div>
+                <div class="card-body">
+                    <h6 class="mb-3"><strong>Manual Labels:</strong></h6>
+                    {% if summary.labeled_count > 0 %}
+                    <div class="mb-3">
+                        {% for label, count in summary.label_distribution.items %}
+                        <div class="mb-2">
+                            <span class="badge bg-{% if label == 'positive' %}success{% elif label == 'negative' %}danger{% else %}secondary{% endif %} me-2">
+                                {{ label|title }}
+                            </span>
+                            <strong>{{ count }}</strong> reviews
+                            <div class="progress mt-1" style="height: 20px;">
+                                <div class="progress-bar bg-{% if label == 'positive' %}success{% elif label == 'negative' %}danger{% else %}secondary{% endif %}" 
+                                     style="width: {% if summary.labeled_count > 0 %}{% widthratio count summary.labeled_count 100 %}{% else %}0{% endif %}%">
+                                    {% if summary.labeled_count > 0 %}{% widthratio count summary.labeled_count 100 %}%{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No manual labels yet.</p>
+                    {% endif %}
+
+                    <hr>
+
+                    <h6 class="mb-3"><strong>Predictions:</strong></h6>
+                    {% if summary.predicted_count > 0 %}
+                    <div class="mb-3">
+                        {% for label, count in summary.prediction_distribution.items %}
+                        <div class="mb-2">
+                            <span class="badge bg-{% if label == 'positive' %}success{% elif label == 'negative' %}danger{% else %}secondary{% endif %} me-2">
+                                {{ label|title }}
+                            </span>
+                            <strong>{{ count }}</strong> reviews
+                            <div class="progress mt-1" style="height: 20px;">
+                                <div class="progress-bar bg-{% if label == 'positive' %}success{% elif label == 'negative' %}danger{% else %}secondary{% endif %}" 
+                                     style="width: {% if summary.predicted_count > 0 %}{% widthratio count summary.predicted_count 100 %}{% else %}0{% endif %}%">
+                                    {% if summary.predicted_count > 0 %}{% widthratio count summary.predicted_count 100 %}%{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="alert alert-info mb-0">
+                        <small>
+                            <i class="fas fa-chart-line"></i>
+                            Average confidence: <strong>{{ summary.avg_confidence|floatformat:2 }}</strong>
+                        </small>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No predictions yet. Start batch prediction above!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Processing Modal -->
+<div class="modal fade" id="processingModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-cogs"></i> Processing Batch Prediction...</h5>
+            </div>
+            <div class="modal-body text-center py-5">
+                <div class="spinner-border text-primary mb-3" style="width: 4rem; height: 4rem;" role="status">
+                    <span class="visually-hidden">Processing...</span>
+                </div>
+                <h5 id="processingStatus">Initializing...</h5>
+                <p class="text-muted" id="processingDetails">Please wait, this may take a few minutes.</p>
+                
+                <div class="progress mt-4" style="height: 25px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                         role="progressbar" 
+                         style="width: 0%;" 
+                         id="processingProgress">0%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Results Modal -->
+<div class="modal fade" id="resultsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="fas fa-check-circle"></i> Batch Prediction Complete!</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="resultsBody">
+                <!-- Results will be inserted here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" onclick="location.reload()">
+                    <i class="fas fa-sync"></i> Refresh Page
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('batchPredictionForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Get form data
+    const formData = new FormData(this);
+    
+    // Show processing modal
+    const processingModal = new bootstrap.Modal(document.getElementById('processingModal'));
+    processingModal.show();
+    
+    // Simulate progress
+    let progress = 0;
+    const progressBar = document.getElementById('processingProgress');
+    const statusText = document.getElementById('processingStatus');
+    const detailsText = document.getElementById('processingDetails');
+    
+    const progressInterval = setInterval(() => {
+        progress += Math.random() * 10;
+        if (progress > 90) progress = 90;
+        
+        progressBar.style.width = progress + '%';
+        progressBar.textContent = Math.round(progress) + '%';
+        
+        // Update status based on progress
+        if (progress < 20) {
+            statusText.textContent = 'Loading model...';
+            detailsText.textContent = 'Reading trained model from disk';
+        } else if (progress < 40) {
+            statusText.textContent = 'Preparing data...';
+            detailsText.textContent = 'Loading feature vectors from database';
+        } else if (progress < 60) {
+            statusText.textContent = 'Applying PCA...';
+            detailsText.textContent = 'Reducing dimensionality';
+        } else if (progress < 90) {
+            statusText.textContent = 'Predicting sentiments...';
+            detailsText.textContent = 'Running SVM classifier on all reviews';
+        }
+    }, 500);
+    
+    // Start batch prediction
+    fetch('{% url "core:start_batch_prediction" dataset.pk %}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        clearInterval(progressInterval);
+        progressBar.style.width = '100%';
+        progressBar.textContent = '100%';
+        
+        if (data.status === 'completed') {
+            // Hide processing modal
+            setTimeout(() => {
+                processingModal.hide();
+                
+                // Show results
+                showResults(data.results);
+            }, 1000);
+        } else if (data.status === 'error') {
+            clearInterval(progressInterval);
+            statusText.textContent = 'Prediction Failed!';
+            statusText.className = 'text-danger';
+            detailsText.textContent = data.message;
+            
+            console.error('Prediction error:', data.message);
+            if (data.traceback) {
+                console.error('Traceback:', data.traceback);
+            }
+            
+            setTimeout(() => {
+                processingModal.hide();
+                alert('Prediction failed: ' + data.message);
+            }, 2000);
+        }
+    })
+    .catch(error => {
+        clearInterval(progressInterval);
+        console.error('Network error:', error);
+        
+        statusText.textContent = 'Network Error!';
+        statusText.className = 'text-danger';
+        detailsText.textContent = error.message;
+        
+        setTimeout(() => {
+            processingModal.hide();
+            alert('Network error: ' + error.message);
+        }, 2000);
+    });
+});
+
+function showResults(results) {
+    const resultsBody = document.getElementById('resultsBody');
+    
+    const predictions = results.predictions || {};
+    const total = results.total_reviews || 0;
+    
+    resultsBody.innerHTML = `
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="alert alert-success">
+                    <h5><i class="fas fa-check-circle"></i> Success!</h5>
+                    <p class="mb-0">
+                        Successfully predicted <strong>${total}</strong> reviews in 
+                        <strong>${results.processing_time?.toFixed(2)}s</strong>
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-12">
+                <h6><strong>Prediction Distribution:</strong></h6>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card bg-success text-white">
+                            <div class="card-body text-center">
+                                <h3>${predictions.positive || 0}</h3>
+                                <p class="mb-0">Positive</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-danger text-white">
+                            <div class="card-body text-center">
+                                <h3>${predictions.negative || 0}</h3>
+                                <p class="mb-0">Negative</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-secondary text-white">
+                            <div class="card-body text-center">
+                                <h3>${predictions.neutral || 0}</h3>
+                                <p class="mb-0">Neutral</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="alert alert-info">
+            <small>
+                <i class="fas fa-info-circle"></i> 
+                Model used: <strong>${results.model_name}</strong><br>
+                Dataset: <strong>${results.dataset_name}</strong>
+            </small>
+        </div>
+    `;
+    
+    // Show results modal
+    const resultsModal = new bootstrap.Modal(document.getElementById('resultsModal'));
+    resultsModal.show();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+
+{% block title %}Preprocessing Results - {{ dataset.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <!-- Bagian Kiri: Title (ambil 8 dari 12 kolom = 66% lebar) -->
+        <div class="col-md-8">
+            <h2><i class="fas fa-check-circle text-success"></i> Preprocessing Results</h2>
+            <p class="text-muted">{{ dataset.name }}</p>
+        </div>
+        
+        <!-- Bagian Kanan: Buttons (ambil 4 dari 12 kolom = 33% lebar) -->
+        <div class="col-md-4 text-end">
+            <a href="{% url 'core:dataset_detail' dataset.pk %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+            <a href="{% url 'core:preliminary_analysis' dataset.pk %}" class="btn btn-primary">
+                <i class="fas fa-chart-line"></i> Next: Analysis
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="card border-success mb-4">
+        <div class="card-header bg-success text-white">
+            <i class="fas fa-check-double"></i> Preprocessing Complete
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h4>{{ stats.processed }}</h4>
+                        <small class="text-muted">Total Reviews Processed</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h4>{{ stats.avg_length_before|floatformat:1 }}</h4>
+                        <small class="text-muted">Avg Words Before</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h4>{{ stats.avg_length_after|floatformat:1 }}</h4>
+                        <small class="text-muted">Avg Words After</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h4>{{ stats.processing_time }}s</h4>
+                        <small class="text-muted">Processing Time</small>
+                    </div>
+                </div>
+            </div>
+
+            <hr>
+
+            <div class="alert alert-info mb-0">
+                <strong><i class="fas fa-info-circle"></i> Configuration:</strong>
+                <ul class="mb-0 mt-2">
+                    <li>Lowercase: <span class="badge bg-success">Enabled</span></li>
+                    <li>Remove URLs & Mentions: <span class="badge bg-success">Enabled</span></li>
+                    <li>Slang Normalization: <span class="badge bg-success">Enabled</span></li>
+                    <li>Stopwords Removal: <span class="badge bg-success">Enabled</span></li>
+                    <li>Stemming: <span class="badge bg-{% if stats.use_stemming %}success">Enabled{% else %}secondary">Disabled{% endif %}</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step-by-Step Results -->
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-list"></i> Detailed Step-by-Step Results (Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ total_reviews }})
+        </div>
+        <div class="card-body p-0">
+            {% for result in detailed_results %}
+            <div class="border-bottom p-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">
+                        <span class="badge bg-primary">Review #{{ result.review.id }}</span>
+                        <span class="badge bg-info">{{ result.original_length }} → {{ result.final_length }} words</span>
+                        <span class="badge bg-success">-{{ result.tokens_removed }} tokens</span>
+                    </h5>
+                    {% if result.review.label %}
+                    <span class="badge bg-{% if result.review.label == 'positive' %}success{% elif result.review.label == 'negative' %}danger{% else %}secondary{% endif %} fs-6">
+                        {{ result.review.label|title }}
+                    </span>
+                    {% endif %}
+                </div>
+
+                <!-- Step 0: Original -->
+                <div class="mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-dark me-2">STEP 0</span>
+                        <strong>Original Text</strong>
+                        <span class="badge bg-secondary ms-2">{{ result.original_length }} words</span>
+                    </div>
+                    <div class="p-3 bg-light rounded">
+                        {{ result.original }}
+                    </div>
+                </div>
+
+                <!-- Step 1: Lowercase -->
+                <div class="mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-primary me-2">STEP 1</span>
+                        <strong>Lowercase Conversion</strong>
+                    </div>
+                    <div class="p-3 bg-light rounded">
+                        {{ result.step1_lowercase }}
+                    </div>
+                </div>
+
+                <!-- Step 2: Clean URLs & Mentions -->
+                <div class="mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-warning me-2">STEP 2</span>
+                        <strong>Remove URLs & Mentions</strong>
+                    </div>
+                    <div class="p-3 bg-light rounded">
+                        {{ result.step2_clean }}
+                    </div>
+                </div>
+
+                <!-- Step 3: Slang Normalization -->
+                <div class="mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-info me-2">STEP 3</span>
+                        <strong>Slang Normalization</strong>
+                    </div>
+                    <div class="p-3 bg-light rounded">
+                        {{ result.step3_normalized }}
+                    </div>
+                </div>
+
+                <!-- Step 4: Remove Stopwords -->
+                <div class="mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-danger me-2">STEP 4</span>
+                        <strong>Remove Stopwords</strong>
+                        <span class="badge bg-secondary ms-2">{{ result.step4_length }} words</span>
+                    </div>
+                    <div class="p-3 bg-light rounded">
+                        {{ result.step4_stopwords_removed }}
+                    </div>
+                </div>
+
+                <!-- Step 5: Stemming -->
+                {% if stats.use_stemming %}
+                <div class="mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-success me-2">STEP 5</span>
+                        <strong>Stemming (Sastrawi)</strong>
+                        <span class="badge bg-secondary ms-2">{{ result.final_length }} words</span>
+                    </div>
+                    <div class="p-3 bg-light rounded">
+                        {{ result.step5_stemmed }}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Final Result -->
+                <div class="alert alert-success mb-0">
+                    <strong><i class="fas fa-check-circle"></i> Final Result:</strong>
+                    <div class="mt-2">
+                        <code>{{ result.step5_stemmed }}</code>
+                    </div>
+                    <small class="text-muted mt-2 d-block">
+                        Reduced from {{ result.original_length }} to {{ result.final_length }} tokens 
+                        ({{ result.tokens_removed }} tokens removed, 
+                        {{ result.final_length|floatformat:0 }}% of original)
+                    </small>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1">First</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+            </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

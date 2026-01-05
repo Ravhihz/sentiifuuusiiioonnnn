@@ -1,0 +1,298 @@
+{% extends 'base.html' %}
+
+{% block title %}Upload Dataset - SentiFusion{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2><i class="fas fa-upload"></i> Upload Dataset</h2>
+            <p class="text-muted">Upload CSV file containing reviews for sentiment analysis</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-file-csv"></i> Dataset Information
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="uploadForm">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Dataset Name *</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                            <small class="text-muted">Give your dataset a descriptive name</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                            <small class="text-muted">Optional description of your dataset</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="file" class="form-label">CSV File *</label>
+                            <input type="file" class="form-control" id="file" name="file" accept=".csv" required>
+                            <small class="text-muted">Upload a CSV file with review texts</small>
+                        </div>
+
+                        <!-- CSV Preview Area (Hidden by default) -->
+                        <div id="csvPreviewArea" style="display: none;">
+                            <!-- Preview content will be inserted here by JavaScript -->
+                        </div>
+
+                        <div class="d-grid gap-2 mt-3">
+                            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn" disabled>
+                                <i class="fas fa-upload"></i> Upload Dataset
+                            </button>
+                            <a href="{% url 'core:dataset_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-info-circle"></i> CSV Format Requirements
+                </div>
+                <div class="card-body">
+                    <h6>Required:</h6>
+                    <ul>
+                        <li>CSV file format</li>
+                        <li>At least one column with text data</li>
+                    </ul>
+
+                    <h6>Optional:</h6>
+                    <ul>
+                        <li>Label column (positive/negative/neutral)</li>
+                    </ul>
+
+                    <h6>Example CSV:</h6>
+                    <pre class="bg-light p-2 rounded"><code>text,label
+"Produk sangat bagus",positive
+"Kualitas buruk",negative
+"Biasa saja",neutral</code></pre>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <i class="fas fa-lightbulb"></i> Tips
+                </div>
+                <div class="card-body">
+                    <small>
+                        <ul>
+                            <li><strong>Step 1:</strong> Upload CSV file</li>
+                            <li><strong>Step 2:</strong> Wait for preview</li>
+                            <li><strong>Step 3:</strong> Select text column</li>
+                            <li><strong>Step 4:</strong> Submit to import</li>
+                        </ul>
+                        <div class="alert alert-warning mb-0 mt-2">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Must select text column before uploading!
+                        </div>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let csvLoaded = false;
+
+document.getElementById('file').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    
+    if (!file) return;
+    
+    // Reset state
+    csvLoaded = false;
+    document.getElementById('submitBtn').disabled = true;
+    
+    // Show loading
+    const previewArea = document.getElementById('csvPreviewArea');
+    previewArea.style.display = 'block';
+    previewArea.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading CSV preview...</p>
+        </div>
+    `;
+    
+    // Create FormData
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+    // Send AJAX request
+    fetch('{% url "core:preview_csv" %}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            previewArea.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle"></i> 
+                    <strong>Error:</strong> ${data.error}
+                </div>
+            `;
+            return;
+        }
+        
+        csvLoaded = true;
+        
+        // Show preview area
+        previewArea.innerHTML = `
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> CSV loaded successfully! 
+                <strong>${data.total_rows} rows</strong> detected.
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="text_column" class="form-label">
+                        <i class="fas fa-asterisk text-danger" style="font-size: 8px;"></i>
+                        Text Column *
+                    </label>
+                    <select class="form-select form-select-lg" id="text_column" name="text_column" required>
+                        <option value="">-- Select column with review text --</option>
+                        ${data.columns.map(col => `<option value="${col}">${col}</option>`).join('')}
+                    </select>
+                    <small class="text-muted">Choose column containing the review text</small>
+                </div>
+
+                <div class="col-md-6">
+                    <label for="label_column" class="form-label">Label Column (Optional)</label>
+                    <select class="form-select form-select-lg" id="label_column" name="label_column">
+                        <option value="">-- No label column --</option>
+                        ${data.columns.map(col => `<option value="${col}">${col}</option>`).join('')}
+                    </select>
+                    <small class="text-muted">Column with sentiment labels (if available)</small>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header bg-light">
+                    <i class="fas fa-table"></i> Data Preview (First 5 Rows)
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 300px; overflow: auto;">
+                        <table class="table table-sm table-bordered table-striped mb-0">
+                            <thead class="table-dark sticky-top">
+                                <tr>
+                                    <th style="width: 50px;" class="text-center">#</th>
+                                    ${data.columns.map(col => `<th>${col}</th>`).join('')}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.preview.map((row, idx) => `
+                                    <tr>
+                                        <td class="text-center"><strong>${idx + 1}</strong></td>
+                                        ${data.columns.map(col => `
+                                            <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${row[col] || ''}">
+                                                ${row[col] || '<span class="text-muted">-</span>'}
+                                            </td>
+                                        `).join('')}
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer text-muted">
+                    <small>Showing first 5 rows of ${data.total_rows} total rows</small>
+                </div>
+            </div>
+        `;
+        
+        // Auto-select text column
+        const textColumnSelect = document.getElementById('text_column');
+        const textCandidates = ['text', 'Text', 'TEXT', 'review', 'Review', 'REVIEW', 'content', 'Content', 'comment', 'Comment', 'ulasan'];
+        for (let candidate of textCandidates) {
+            if (data.columns.includes(candidate)) {
+                textColumnSelect.value = candidate;
+                break;
+            }
+        }
+        
+        // Auto-select label column
+        const labelColumnSelect = document.getElementById('label_column');
+        const labelCandidates = ['label', 'Label', 'LABEL', 'sentiment', 'Sentiment', 'SENTIMENT', 'polarity', 'Polarity', 'class'];
+        for (let candidate of labelCandidates) {
+            if (data.columns.includes(candidate)) {
+                labelColumnSelect.value = candidate;
+                break;
+            }
+        }
+        
+        // Enable submit when text column is selected
+        textColumnSelect.addEventListener('change', function() {
+            const isValid = this.value !== '';
+            document.getElementById('submitBtn').disabled = !isValid;
+            
+            if (isValid) {
+                document.getElementById('submitBtn').classList.remove('btn-secondary');
+                document.getElementById('submitBtn').classList.add('btn-primary');
+            } else {
+                document.getElementById('submitBtn').classList.remove('btn-primary');
+                document.getElementById('submitBtn').classList.add('btn-secondary');
+            }
+        });
+        
+        // Enable submit if text column already auto-selected
+        if (textColumnSelect.value) {
+            document.getElementById('submitBtn').disabled = false;
+            document.getElementById('submitBtn').classList.add('btn-primary');
+        }
+    })
+    .catch(error => {
+        previewArea.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i> 
+                <strong>Error loading CSV:</strong> ${error.message || error}
+                <br><small>Please check your file format and try again.</small>
+            </div>
+        `;
+        console.error('Error:', error);
+    });
+});
+
+// Form validation before submit
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    if (!csvLoaded) {
+        e.preventDefault();
+        alert('❌ Please upload and preview a CSV file first!');
+        document.getElementById('file').focus();
+        return false;
+    }
+    
+    const textColumn = document.getElementById('text_column');
+    
+    if (!textColumn || !textColumn.value) {
+        e.preventDefault();
+        alert('❌ Please select a TEXT COLUMN from the dropdown!\n\nThe text column is required to import reviews.');
+        if (textColumn) textColumn.focus();
+        return false;
+    }
+    
+    // Show loading on submit button
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading & Importing...';
+    
+    return true;
+});
+</script>
+{% endblock %}

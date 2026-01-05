@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+
+{% block title %}Model Evaluation - {{ model.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="max-width: 1400px;">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-chart-bar"></i> Model Evaluation</h2>
+            <p class="text-muted">{{ model.name }}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'core:model_detail' model.pk %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Model Details
+            </a>
+        </div>
+    </div>
+
+    <!-- Performance Overview -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white" style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);">
+                <div class="card-body text-center">
+                    <h6 class="mb-2"><i class="fas fa-bullseye"></i> Accuracy</h6>
+                    <h2 class="mb-1">{{ model.accuracy|floatformat:2 }}%</h2>
+                    <small>Overall correctness</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white" style="background: linear-gradient(135deg, #059669 0%, #047857 100%);">
+                <div class="card-body text-center">
+                    <h6 class="mb-2"><i class="fas fa-crosshairs"></i> Precision</h6>
+                    <h2 class="mb-1">{{ model.precision|floatformat:4 }}</h2>
+                    <small>Positive predictive value</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white" style="background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);">
+                <div class="card-body text-center">
+                    <h6 class="mb-2"><i class="fas fa-search"></i> Recall</h6>
+                    <h2 class="mb-1">{{ model.recall|floatformat:4 }}</h2>
+                    <small>True positive rate</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white" style="background: linear-gradient(135deg, #d97706 0%, #b45309 100%);">
+                <div class="card-body text-center">
+                    <h6 class="mb-2"><i class="fas fa-balance-scale"></i> F1-Score</h6>
+                    <h2 class="mb-1">{{ model.f1_score|floatformat:4 }}</h2>
+                    <small>Harmonic mean</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confusion Matrix -->
+    <div class="row mb-4">
+        <div class="col-md-7">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-table"></i> Confusion Matrix
+                </div>
+                <div class="card-body">
+                    <p><strong>Test Predictions Analysis:</strong></p>
+                    <p class="text-muted small">
+                        Total Test Samples: {{ y_test|length }}<br>
+                        Correct Predictions: <span class="text-success fw-bold">{{ correct_count }}</span><br>
+                        Incorrect Predictions: <span class="text-danger fw-bold">{{ incorrect_count }}</span>
+                    </p>
+                    
+                    <div class="alert alert-info">
+                        <small>
+                            <i class="fas fa-info-circle"></i> 
+                            Confusion matrix shows actual vs predicted labels. 
+                            Diagonal elements = correct predictions.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <i class="fas fa-chart-line"></i> Class Distribution
+                </div>
+                <div class="card-body">
+                    <h6>Test Set Distribution:</h6>
+                    {% for cls, count in parameters.class_counts.items %}
+                    <div class="mb-2">
+                        <strong>{{ cls|title }}:</strong>
+                        <span class="badge bg-secondary">{{ count }} samples</span>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar bg-info" 
+                                 style="width: {% widthratio count y_test|length 100 %}%">
+                                {% widthratio count y_test|length 100 %}%
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LDA Topics -->
+    {% if topics %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <i class="fas fa-lightbulb"></i> Discovered Topics (LDA)
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for topic_name, words in topics.items %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card border-info">
+                                <div class="card-header bg-light">
+                                    <strong>{{ topic_name|upper }}</strong>
+                                </div>
+                                <div class="card-body">
+                                    <div class="d-flex flex-wrap gap-1">
+                                        {% for word_data in words %}
+                                        <span class="badge bg-info">
+                                            {{ word_data.word }}
+                                        </span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Training Summary -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-info-circle"></i> Training Summary
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <th style="width: 50%;">Algorithm:</th>
+                            <td><span class="badge bg-primary">{{ model.algorithm|upper }}</span></td>
+                        </tr>
+                        <tr>
+                            <th>Kernel:</th>
+                            <td>{{ parameters.kernel|upper }}</td>
+                        </tr>
+                        <tr>
+                            <th>Training Samples:</th>
+                            <td>{{ parameters.train_samples }}</td>
+                        </tr>
+                        <tr>
+                            <th>Test Samples:</th>
+                            <td>{{ parameters.test_samples }}</td>
+                        </tr>
+                        <tr>
+                            <th>PCA Components:</th>
+                            <td>{{ parameters.n_components }} ({{ parameters.pca_variance|floatformat:1 }}% variance)</td>
+                        </tr>
+                        <tr>
+                            <th>Support Vectors:</th>
+                            <td>{{ parameters.n_support_vectors }} ({{ parameters.support_vector_ratio|floatformat:2 }}%)</td>
+                        </tr>
+                        <tr>
+                            <th>Training Time:</th>
+                            <td>{{ parameters.training_time|floatformat:2 }}s</td>
+                        </tr>
+                        {% if parameters.apply_smote %}
+                        <tr class="table-success">
+                            <th>SMOTE Applied:</th>
+                            <td>
+                                <span class="badge bg-success">Yes</span><br>
+                                <small>{{ parameters.n_samples_before_smote }} → {{ parameters.n_samples_after_smote }}</small>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% if parameters.extract_lda_topics %}
+                        <tr class="table-info">
+                            <th>LDA Topics:</th>
+                            <td>
+                                <span class="badge bg-info">{{ parameters.n_topics }} topics extracted</span>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-lightbulb"></i> Interpretation Guide
+                </div>
+                <div class="card-body">
+                    <h6><strong>Metrics Explained:</strong></h6>
+                    <ul class="small">
+                        <li><strong>Accuracy:</strong> Overall percentage of correct predictions</li>
+                        <li><strong>Precision:</strong> Of all positive predictions, how many were correct?</li>
+                        <li><strong>Recall:</strong> Of all actual positives, how many did we find?</li>
+                        <li><strong>F1-Score:</strong> Harmonic mean of precision and recall</li>
+                    </ul>
+                    
+                    <h6 class="mt-3"><strong>Performance Guide:</strong></h6>
+                    <ul class="small">
+                        <li><span class="badge bg-success">Excellent</span> > 0.80</li>
+                        <li><span class="badge bg-info">Good</span> 0.70 - 0.80</li>
+                        <li><span class="badge bg-warning text-dark">Fair</span> 0.50 - 0.70</li>
+                        <li><span class="badge bg-danger">Poor</span> < 0.50</li>
+                    </ul>
+
+                    {% if model.accuracy < 0.5 %}
+                    <div class="alert alert-warning mt-3">
+                        <small>
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            <strong>Low Accuracy Detected!</strong><br>
+                            Consider: More labeled data (500+), better class balance, or different hyperparameters.
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

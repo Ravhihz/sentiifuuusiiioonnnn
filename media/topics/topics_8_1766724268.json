@@ -1,0 +1,212 @@
+{
+  "topic_1": [
+    {
+      "word": "mbg",
+      "probability": 0.08795900939368062
+    },
+    {
+      "word": "makan",
+      "probability": 0.04696840307429547
+    },
+    {
+      "word": "program",
+      "probability": 0.0444064901793339
+    },
+    {
+      "word": "gizi",
+      "probability": 0.03928266438941076
+    },
+    {
+      "word": "anak",
+      "probability": 0.028181041844577284
+    },
+    {
+      "word": "sekolah",
+      "probability": 0.027327070879590094
+    },
+    {
+      "word": "gratis",
+      "probability": 0.018787361229718188
+    },
+    {
+      "word": "papua",
+      "probability": 0.016225448334756618
+    },
+    {
+      "word": "prabowo",
+      "probability": 0.014517506404782237
+    },
+    {
+      "word": "libat",
+      "probability": 0.010247651579846286
+    }
+  ],
+  "topic_2": [
+    {
+      "word": "gizi",
+      "probability": 0.10618729096989966
+    },
+    {
+      "word": "makan",
+      "probability": 0.09531772575250837
+    },
+    {
+      "word": "gratis",
+      "probability": 0.08946488294314381
+    },
+    {
+      "word": "program",
+      "probability": 0.056856187290969896
+    },
+    {
+      "word": "mbg",
+      "probability": 0.030936454849498328
+    },
+    {
+      "word": "indonesia",
+      "probability": 0.0225752508361204
+    },
+    {
+      "word": "nasional",
+      "probability": 0.020066889632107024
+    },
+    {
+      "word": "siswa",
+      "probability": 0.01839464882943144
+    },
+    {
+      "word": "sekolah",
+      "probability": 0.01839464882943144
+    },
+    {
+      "word": "badan",
+      "probability": 0.016722408026755852
+    }
+  ],
+  "topic_3": [
+    {
+      "word": "sppg",
+      "probability": 0.043586550435865505
+    },
+    {
+      "word": "2025",
+      "probability": 0.0323785803237858
+    },
+    {
+      "word": "laksana",
+      "probability": 0.026151930261519303
+    },
+    {
+      "word": "bangun",
+      "probability": 0.021170610211706103
+    },
+    {
+      "word": "dana",
+      "probability": 0.0186799501867995
+    },
+    {
+      "word": "muara",
+      "probability": 0.017434620174346202
+    },
+    {
+      "word": "gadis",
+      "probability": 0.017434620174346202
+    },
+    {
+      "word": "batang",
+      "probability": 0.017434620174346202
+    },
+    {
+      "word": "m",
+      "probability": 0.014943960149439602
+    },
+    {
+      "word": "dapur",
+      "probability": 0.0136986301369863
+    }
+  ],
+  "topic_4": [
+    {
+      "word": "gizi",
+      "probability": 0.07230196703880915
+    },
+    {
+      "word": "program",
+      "probability": 0.06698564593301436
+    },
+    {
+      "word": "makan",
+      "probability": 0.06113769271664009
+    },
+    {
+      "word": "gratis",
+      "probability": 0.05954279638490165
+    },
+    {
+      "word": "mbg",
+      "probability": 0.045720361509835196
+    },
+    {
+      "word": "anak",
+      "probability": 0.0430622009569378
+    },
+    {
+      "word": "indonesia",
+      "probability": 0.029239766081871343
+    },
+    {
+      "word": "makanbergizigratis",
+      "probability": 0.024986709197235512
+    },
+    {
+      "word": "sehat",
+      "probability": 0.022328548644338118
+    },
+    {
+      "word": "dukung",
+      "probability": 0.022328548644338118
+    }
+  ],
+  "topic_5": [
+    {
+      "word": "mbg",
+      "probability": 0.10957854406130269
+    },
+    {
+      "word": "racun",
+      "probability": 0.03908045977011494
+    },
+    {
+      "word": "ya",
+      "probability": 0.017624521072796936
+    },
+    {
+      "word": "banget",
+      "probability": 0.01685823754789272
+    },
+    {
+      "word": "anggar",
+      "probability": 0.016091954022988506
+    },
+    {
+      "word": "orang",
+      "probability": 0.01532567049808429
+    },
+    {
+      "word": "negara",
+      "probability": 0.013026819923371647
+    },
+    {
+      "word": "jabat",
+      "probability": 0.010727969348659003
+    },
+    {
+      "word": "nya",
+      "probability": 0.010727969348659003
+    },
+    {
+      "word": "bapak",
+      "probability": 0.010727969348659003
+    }
+  ]
+}

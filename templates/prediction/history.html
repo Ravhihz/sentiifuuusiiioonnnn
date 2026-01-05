@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}Prediction History{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="max-width: 1400px;">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-history"></i> Prediction History</h2>
+            <p class="text-muted">All real-time predictions log</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'core:realtime_prediction' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> New Prediction
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white" style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);">
+                <div class="card-body text-center">
+                    <h3>{{ total_predictions }}</h3>
+                    <p class="mb-0"><i class="fas fa-chart-line"></i> Total Predictions</p>
+                </div>
+            </div>
+        </div>
+        
+        {% for item in sentiment_counts %}
+        <div class="col-md-3">
+            <div class="card text-white" style="background: linear-gradient(135deg, {% if item.predicted_sentiment == 'positive' %}#059669, #047857{% elif item.predicted_sentiment == 'negative' %}#dc2626, #b91c1c{% else %}#6c757d, #495057{% endif %});">
+                <div class="card-body text-center">
+                    <h3>{{ item.count }}</h3>
+                    <p class="mb-0">{{ item.predicted_sentiment|title }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Predictions Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-table"></i> All Predictions (Latest 100)
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th style="width: 5%;">ID</th>
+                                    <th style="width: 10%;">Time</th>
+                                    <th style="width: 45%;">Text</th>
+                                    <th style="width: 10%;">Sentiment</th>
+                                    <th style="width: 10%;">Confidence</th>
+                                    <th style="width: 10%;">Source</th>
+                                    <th style="width: 10%;">Feedback</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pred in predictions %}
+                                <tr>
+                                    <td>{{ pred.id }}</td>
+                                    <td><small>{{ pred.created_at|date:"d M Y H:i" }}</small></td>
+                                    <td>
+                                        <span class="text-truncate d-inline-block" style="max-width: 400px;" title="{{ pred.text }}">
+                                            {{ pred.text }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if pred.predicted_sentiment == 'positive' %}success{% elif pred.predicted_sentiment == 'negative' %}danger{% else %}secondary{% endif %}">
+                                            {{ pred.predicted_sentiment|title }}
+                                        </span>
+                                    </td>
+                                    <td>{{ pred.confidence_score|floatformat:2 }}</td>
+                                    <td><small class="text-muted">{{ pred.source }}</small></td>
+                                    <td>
+                                        {% if pred.user_feedback %}
+                                        <span class="badge bg-{% if pred.user_feedback == 'correct' %}success{% else %}warning{% endif %}">
+                                            {{ pred.user_feedback }}
+                                        </span>
+                                        {% else %}
+                                        <small class="text-muted">-</small>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-4">
+                                        No predictions yet. <a href="{% url 'core:realtime_prediction' %}">Make your first prediction!</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

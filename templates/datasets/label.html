@@ -1,0 +1,318 @@
+{% extends 'base.html' %}
+
+{% block title %}Label Reviews - {{ dataset.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="max-width: 1400px;">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-tags"></i> Label Reviews</h2>
+            <p class="text-muted">{{ dataset.name }}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'core:preliminary_analysis' dataset.pk %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Analysis
+            </a>
+            <a href="{% url 'core:train_model' dataset.pk %}" 
+               class="btn btn-success" 
+               {% if not can_train %}disabled title="Need {{ min_labels_required }} labels to train"{% endif %}>
+                <i class="fas fa-cogs"></i> Train Model
+            </a>
+        </div>
+    </div>
+
+    <!-- Progress Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="mb-0">Labeling Progress</h5>
+                        <span class="badge bg-primary fs-6">{{ labeled_count }} / {{ total_reviews }}</span>
+                    </div>
+                    <div class="progress" style="height: 30px;">
+                        <div class="progress-bar {% if progress_percentage >= 100 %}bg-success{% elif progress_percentage >= 50 %}bg-info{% else %}bg-warning{% endif %}" 
+                             role="progressbar" 
+                             style="width: {{ progress_percentage }}%;" 
+                             aria-valuenow="{{ progress_percentage }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                            {{ progress_percentage|floatformat:1 }}%
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i> 
+                            <strong>{{ unlabeled_count }}</strong> reviews remaining | 
+                            Minimum <strong>{{ min_labels_required }} labeled</strong> reviews required for training
+                            {% if dataset_size_category == 'large' %}
+                            <span class="badge bg-warning ms-2">Large Dataset</span>
+                            {% else %}
+                            <span class="badge bg-info ms-2">Small/Sample Dataset</span>
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter & Navigation -->
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <div class="btn-group" role="group">
+                <a href="?filter=unlabeled&page=1" class="btn btn-{% if filter_type == 'unlabeled' %}primary{% else %}outline-primary{% endif %}">
+                    <i class="fas fa-question-circle"></i> Unlabeled ({{ unlabeled_count }})
+                </a>
+                <a href="?filter=all&page=1" class="btn btn-{% if filter_type == 'all' %}primary{% else %}outline-primary{% endif %}">
+                    <i class="fas fa-list"></i> All ({{ total_reviews }})
+                </a>
+                <a href="?filter=positive&page=1" class="btn btn-{% if filter_type == 'positive' %}success{% else %}outline-success{% endif %}">
+                    <i class="fas fa-smile"></i> Positive
+                </a>
+                <a href="?filter=negative&page=1" class="btn btn-{% if filter_type == 'negative' %}danger{% else %}outline-danger{% endif %}">
+                    <i class="fas fa-frown"></i> Negative
+                </a>
+                <a href="?filter=neutral&page=1" class="btn btn-{% if filter_type == 'neutral' %}secondary{% else %}outline-secondary{% endif %}">
+                    <i class="fas fa-meh"></i> Neutral
+                </a>
+            </div>
+        </div>
+        <div class="col-md-4 text-end">
+            <span class="text-muted">
+                Review <strong>{{ page_obj.number }}</strong> of <strong>{{ page_obj.paginator.count }}</strong>
+            </span>
+        </div>
+    </div>
+
+    {% if current_review %}
+    <!-- Review Card -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-file-alt"></i> Review #{{ current_review.id }}</span>
+                    {% if current_review.label %}
+                    <span class="badge bg-{% if current_review.label == 'positive' %}success{% elif current_review.label == 'negative' %}danger{% else %}light text-dark{% endif %}" style="font-size: 1rem; padding: 8px 16px;">
+                        Current: {{ current_review.label|title }}
+                    </span>
+                    {% else %}
+                    <span class="badge bg-warning" style="font-size: 1rem; padding: 8px 16px;">Not Labeled</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <!-- Original Text & Cleaned Text Side-by-Side -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="mb-2">
+                                <strong><i class="fas fa-file-alt"></i> Original Text (Raw)</strong>
+                            </div>
+                            <div class="p-3" style="background-color: #f8f9fa; border-radius: 8px; border: 2px solid #dee2e6; min-height: 200px; max-height: 300px; overflow-y: auto;">
+                                <p class="mb-0" style="line-height: 1.8; font-size: 1rem;">{{ current_review.text }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-2">
+                                <strong><i class="fas fa-check-circle text-success"></i> Cleaned Text (Preprocessed)</strong>
+                                {% if token_count > 0 %}
+                                <span class="badge bg-info ms-2">{{ token_count }} tokens</span>
+                                {% endif %}
+                            </div>
+                            {% if cleaned_text %}
+                            <div class="p-3" style="background-color: #ffffff; border-radius: 8px; border: 2px solid #059669; min-height: 200px; max-height: 300px; overflow-y: auto;">
+                                <p class="mb-0" style="line-height: 1.8; font-size: 1rem; font-family: 'Courier New', monospace; color: #047857; font-weight: 600;">
+                                    {{ cleaned_text }}
+                                </p>
+                            </div>
+                            {% else %}
+                            <div class="p-3" style="background-color: #fff3cd; border-radius: 8px; border: 2px solid #ffc107; min-height: 200px;">
+                                <p class="mb-0 text-muted fst-italic">
+                                    <i class="fas fa-exclamation-triangle"></i> No cleaned text available
+                                </p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Label Buttons -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <button class="btn btn-success btn-lg w-100" 
+                                    style="height: 100px; font-size: 1.1rem;" 
+                                    onclick="labelReview('positive')"
+                                    data-label="positive">
+                                <i class="fas fa-smile fa-3x mb-2"></i><br>
+                                <strong>POSITIVE</strong><br>
+                                <small class="mt-1">Press <kbd>1</kbd></small>
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-secondary btn-lg w-100" 
+                                    style="height: 100px; font-size: 1.1rem;" 
+                                    onclick="labelReview('neutral')"
+                                    data-label="neutral">
+                                <i class="fas fa-meh fa-3x mb-2"></i><br>
+                                <strong>NEUTRAL</strong><br>
+                                <small class="mt-1">Press <kbd>2</kbd></small>
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-danger btn-lg w-100" 
+                                    style="height: 100px; font-size: 1.1rem;" 
+                                    onclick="labelReview('negative')"
+                                    data-label="negative">
+                                <i class="fas fa-frown fa-3x mb-2"></i><br>
+                                <strong>NEGATIVE</strong><br>
+                                <small class="mt-1">Press <kbd>3</kbd></small>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Navigation -->
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        <div>
+                            {% if page_obj.has_previous %}
+                            <a href="?filter={{ filter_type }}&page={{ page_obj.previous_page_number }}" 
+                               class="btn btn-outline-secondary btn-lg">
+                                <i class="fas fa-arrow-left"></i> Previous
+                            </a>
+                            {% endif %}
+                        </div>
+                        <div class="text-center">
+                            <small class="text-muted">Use keyboard: <kbd>1</kbd> Positive | <kbd>2</kbd> Neutral | <kbd>3</kbd> Negative</small>
+                        </div>
+                        <div>
+                            {% if page_obj.has_next %}
+                            <a href="?filter={{ filter_type }}&page={{ page_obj.next_page_number }}" 
+                               class="btn btn-outline-secondary btn-lg" id="nextBtn">
+                                Skip <i class="fas fa-arrow-right"></i>
+                            </a>
+                            {% else %}
+                            <a href="{% url 'core:preliminary_analysis' dataset.pk %}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-check"></i> Done - View Analysis
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- No Reviews -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                    <h4>All reviews in this filter are labeled!</h4>
+                    <p class="text-muted">Choose a different filter or proceed to training.</p>
+                    <div class="mt-4">
+                        <a href="?filter=unlabeled&page=1" class="btn btn-primary me-2">
+                            <i class="fas fa-question-circle"></i> View Unlabeled
+                        </a>
+                        {% if can_train %}
+                        <a href="{% url 'core:train_model' dataset.pk %}" class="btn btn-success">
+                            <i class="fas fa-cogs"></i> Train Model
+                        </a>
+                        {% else %}
+                        <button class="btn btn-secondary" disabled title="Need {{ min_labels_required }} labels">
+                            <i class="fas fa-cogs"></i> Train Model ({{ labeled_count }}/{{ min_labels_required }})
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+const currentReviewId = {{ current_review.id|default:"null" }};
+const filterType = '{{ filter_type }}';
+const currentPage = {{ page_obj.number }};
+const hasNext = {{ page_obj.has_next|lower }};
+
+function labelReview(label) {
+    if (!currentReviewId) return;
+    
+    // Disable buttons
+    const buttons = document.querySelectorAll('[data-label]');
+    buttons.forEach(btn => {
+        btn.disabled = true;
+        const icon = btn.querySelector('i');
+        icon.className = 'fas fa-spinner fa-spin fa-3x mb-2';
+        btn.querySelector('strong').textContent = 'SAVING...';
+    });
+    
+    // Save label via AJAX
+    fetch('{% url "core:save_labels" dataset.pk %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `review_id=${currentReviewId}&label=${label}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success toast
+            showToast(`✓ Labeled as ${label}!`, 'success');
+            
+            // Auto-advance to next review
+            setTimeout(() => {
+                if (hasNext) {
+                    window.location.href = `?filter=${filterType}&page=${currentPage + 1}`;
+                } else {
+                    window.location.reload();
+                }
+            }, 500);
+        } else {
+            alert('Error: ' + (data.error || 'Unknown error'));
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Network error. Please try again.');
+        location.reload();
+    });
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // Ignore if typing in input/textarea
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    
+    if (e.key === '1') {
+        e.preventDefault();
+        labelReview('positive');
+    } else if (e.key === '2') {
+        e.preventDefault();
+        labelReview('neutral');
+    } else if (e.key === '3') {
+        e.preventDefault();
+        labelReview('negative');
+    }
+});
+
+// Toast notification
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} position-fixed top-0 start-50 translate-middle-x mt-3 shadow-lg`;
+    toast.style.zIndex = '9999';
+    toast.style.minWidth = '300px';
+    toast.style.fontSize = '1.1rem';
+    toast.innerHTML = `<strong>${message}</strong>`;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.transition = 'opacity 0.3s';
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 1500);
+}
+</script>
+{% endblock %}

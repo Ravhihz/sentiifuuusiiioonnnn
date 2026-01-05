@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+
+{% block title %}Pre-Analysis - {{ dataset.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-start mb-4 pb-3 border-bottom">
+        <div>
+            <h2 class="mb-1">
+                <i class="fas fa-search text-info"></i> 
+                Pre-Analysis (Raw Data Exploration)
+            </h2>
+            <p class="text-muted mb-0">{{ dataset.name }}</p>
+            <small class="text-muted">
+                <i class="fas fa-info-circle"></i> 
+                Analyze raw data quality before preprocessing
+            </small>
+        </div>
+        
+        <div class="text-end">
+            <a href="{% url 'core:dataset_detail' dataset.pk %}" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+            <a href="{% url 'core:dataset_preprocess' dataset.pk %}" class="btn btn-primary">
+                <i class="fas fa-broom"></i> Next: Preprocess
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h3>{{ raw_analysis.total_reviews }}</h3>
+                    <p class="mb-0"><i class="fas fa-database"></i> Total Reviews</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h3>{{ raw_analysis.valid_reviews }}</h3>
+                    <p class="mb-0"><i class="fas fa-check-circle"></i> Valid Reviews</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body text-center">
+                    <h3>{{ raw_analysis.empty_reviews }}</h3>
+                    <p class="mb-0"><i class="fas fa-exclamation-triangle"></i> Empty Reviews</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <h3>{{ raw_analysis.duplicate_count }}</h3>
+                    <p class="mb-0"><i class="fas fa-copy"></i> Duplicates</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Quality Issues -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <i class="fas fa-exclamation-circle"></i> Data Quality Issues
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            <tr>
+                                <th style="width: 60%;">Empty Reviews</th>
+                                <td class="text-end">
+                                    <span class="badge bg-{% if raw_analysis.empty_reviews > 0 %}danger{% else %}success{% endif %}">
+                                        {{ raw_analysis.empty_reviews }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Duplicate Reviews</th>
+                                <td class="text-end">
+                                    <span class="badge bg-{% if raw_analysis.duplicate_count > 0 %}warning{% else %}success{% endif %}">
+                                        {{ raw_analysis.duplicate_count }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Reviews with Invalid Characters</th>
+                                <td class="text-end">
+                                    <span class="badge bg-{% if raw_analysis.invalid_chars_count > 0 %}warning{% else %}success{% endif %}">
+                                        {{ raw_analysis.invalid_chars_count }}
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    {% if raw_analysis.empty_reviews > 0 or raw_analysis.duplicate_count > 0 or raw_analysis.invalid_chars_count > 0 %}
+                    <div class="alert alert-warning mt-3 mb-0">
+                        <small>
+                            <i class="fas fa-info-circle"></i> 
+                            <strong>Note:</strong> These issues will be automatically cleaned during preprocessing.
+                        </small>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-success mt-3 mb-0">
+                        <small>
+                            <i class="fas fa-check-circle"></i> 
+                            <strong>Great!</strong> No major data quality issues detected.
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <i class="fas fa-text-height"></i> Text Length Statistics (Raw Data)
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            <tr>
+                                <th style="width: 60%;">Average Length</th>
+                                <td class="text-end">
+                                    <strong>{{ raw_analysis.avg_text_length|floatformat:1 }}</strong> words
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Minimum Length</th>
+                                <td class="text-end">{{ raw_analysis.min_length }} words</td>
+                            </tr>
+                            <tr>
+                                <th>Maximum Length</th>
+                                <td class="text-end">{{ raw_analysis.max_length }} words</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="alert alert-info mt-3 mb-0">
+                        <small>
+                            <i class="fas fa-lightbulb"></i> 
+                            <strong>Tip:</strong> Text length will be reduced after removing stopwords and stemming.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Duplicate Reviews Detail -->
+    {% if raw_analysis.duplicates %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-warning">
+                    <i class="fas fa-copy"></i> Top Duplicate Reviews (Sample)
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 10%;">Count</th>
+                                    <th style="width: 90%;">Text (Preview)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for dup in raw_analysis.duplicates %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-warning">{{ dup.count }}x</span>
+                                    </td>
+                                    <td>
+                                        <small>{{ dup.text }}...</small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i> 
+                        Showing top {{ raw_analysis.duplicates|length }} duplicates. Duplicates will be removed during preprocessing.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recommendations -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-tasks"></i> Recommendations
+                </div>
+                <div class="card-body">
+                    <h5>Next Steps:</h5>
+                    <ol>
+                        <li class="mb-2">
+                            <strong>Preprocessing:</strong> Clean the dataset to remove empty reviews, duplicates, and invalid characters.
+                            {% if raw_analysis.empty_reviews > 0 or raw_analysis.duplicate_count > 0 %}
+                                <span class="badge bg-warning ms-2">Recommended</span>
+                            {% endif %}
+                        </li>
+                        <li class="mb-2">
+                            <strong>Text Normalization:</strong> Convert to lowercase, normalize slang words, remove stopwords.
+                        </li>
+                        <li class="mb-2">
+                            <strong>Stemming:</strong> Apply Sastrawi stemmer for better feature extraction.
+                            {% if raw_analysis.total_reviews > 5000 %}
+                                <small class="text-muted">(Optional for large datasets - may take longer)</small>
+                            {% endif %}
+                        </li>
+                        <li>
+                            <strong>Feature Extraction:</strong> Train FastText word embeddings and extract 300-dim feature vectors.
+                        </li>
+                    </ol>
+
+                    <div class="alert alert-info mb-0 mt-3">
+                        <i class="fas fa-info-circle"></i> 
+                        <strong>Estimated Processing Time:</strong> 
+                        {% if raw_analysis.total_reviews < 1000 %}
+                            Less than 1 minute
+                        {% elif raw_analysis.total_reviews < 5000 %}
+                            1-3 minutes
+                        {% elif raw_analysis.total_reviews < 10000 %}
+                            3-10 minutes
+                        {% else %}
+                            10-20 minutes (consider disabling stemming for faster processing)
+                        {% endif %}
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <a href="{% url 'core:dataset_preprocess' dataset.pk %}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-play"></i> Proceed to Preprocessing
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

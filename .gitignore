@@ -1,0 +1,86 @@
+# Virtual Environment - DON'T UPLOAD!
+venv/
+env/
+ENV/
+.venv/
+
+# Python
+*.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Media files (uploaded datasets can be large)
+media/datasets/original/*.csv
+media/datasets/preprocessed/*.csv
+media/models/trained/*.pkl
+media/models/trained/*.joblib
+
+# Keep folder structure
+!media/datasets/original/.gitkeep
+!media/datasets/preprocessed/.gitkeep
+!media/models/trained/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Sensitive files
+*.env
+.env
+.env.local
+secrets.py
+settings_local.py
+
+# Backup files
+*.bak
+*~
+
+# Coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/

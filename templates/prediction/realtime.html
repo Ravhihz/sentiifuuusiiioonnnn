@@ -1,0 +1,336 @@
+{% extends 'base.html' %}
+
+{% block title %}Real-time Sentiment Prediction{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="max-width: 1200px;">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-bolt"></i> Real-time Sentiment Prediction</h2>
+            <p class="text-muted">Predict sentiment for any new text instantly</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'core:prediction_history' %}" class="btn btn-outline-info">
+                <i class="fas fa-history"></i> View History
+            </a>
+            <a href="{% url 'core:dataset_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Datasets
+            </a>
+        </div>
+    </div>
+
+    <!-- Info Alert -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <h5><i class="fas fa-info-circle"></i> How It Works</h5>
+                <p class="mb-2">
+                    Enter any text (review, comment, feedback) and get instant sentiment prediction:
+                </p>
+                <ul class="mb-0">
+                    <li><strong>Positive:</strong> Happy, satisfied, praising tone</li>
+                    <li><strong>Negative:</strong> Unhappy, disappointed, complaining tone</li>
+                    <li><strong>Neutral:</strong> Informative, objective, neither positive nor negative</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prediction Form & Results -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-edit"></i> Enter Text to Analyze
+                </div>
+                <div class="card-body">
+                    {% if available_models %}
+                    <form id="predictionForm">
+                        {% csrf_token %}
+                        
+                        <!-- Text Input -->
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Input Text:</strong></label>
+                            <textarea 
+                                class="form-control" 
+                                name="text" 
+                                id="inputText" 
+                                rows="6" 
+                                placeholder="Example: Makanan sangat enak dan pelayanan ramah. Harga terjangkau, tempatnya bersih. Recommended!"
+                                required
+                                minlength="10"></textarea>
+                            <small class="text-muted">
+                                Minimum 10 characters. Can be in Indonesian or English.
+                            </small>
+                        </div>
+
+                        <!-- Model Selection -->
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Select Model:</strong></label>
+                            <select class="form-select" name="model_id" id="model_id" required>
+                                <option value="">-- Choose a model --</option>
+                                {% for model in available_models %}
+                                <option value="{{ model.pk }}" {% if forloop.first %}selected{% endif %}>
+                                    {{ model.name }} ({{ model.accuracy|floatformat:1 }}% accuracy)
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Character Count -->
+                        <div class="mb-3">
+                            <small class="text-muted">
+                                Characters: <span id="charCount">0</span>
+                            </small>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg" id="predictBtn">
+                                <i class="fas fa-magic"></i> Predict Sentiment
+                            </button>
+                        </div>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>No models available!</strong><br>
+                        Please train a model first before using real-time prediction.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <!-- Prediction Result (Hidden Initially) -->
+            <div class="card" id="resultCard" style="display: none;">
+                <div class="card-header text-white" id="resultHeader">
+                    <i class="fas fa-check-circle"></i> Prediction Result
+                </div>
+                <div class="card-body" id="resultBody">
+                    <!-- Results will be inserted here -->
+                </div>
+            </div>
+
+            <!-- Example Texts -->
+            <div class="card" id="examplesCard">
+                <div class="card-header bg-info text-white">
+                    <i class="fas fa-lightbulb"></i> Example Texts
+                </div>
+                <div class="card-body">
+                    <p class="mb-2"><strong>Click to try:</strong></p>
+                    
+                    <div class="mb-2">
+                        <button class="btn btn-sm btn-outline-success w-100 text-start example-btn" 
+                                data-text="Makanan sangat enak dan lezat! Pelayanan ramah, harga terjangkau. Tempatnya bersih dan nyaman. Highly recommended!">
+                            <i class="fas fa-smile"></i> Positive Example
+                        </button>
+                    </div>
+                    
+                    <div class="mb-2">
+                        <button class="btn btn-sm btn-outline-danger w-100 text-start example-btn" 
+                                data-text="Makanan tidak enak, pelayanan lambat dan tidak ramah. Harga mahal tidak sesuai kualitas. Sangat mengecewakan!">
+                            <i class="fas fa-frown"></i> Negative Example
+                        </button>
+                    </div>
+                    
+                    <div class="mb-2">
+                        <button class="btn btn-sm btn-outline-secondary w-100 text-start example-btn" 
+                                data-text="Restoran ini menyediakan makanan Indonesia dan Barat. Buka setiap hari dari jam 10 pagi sampai 10 malam. Lokasi di pusat kota.">
+                            <i class="fas fa-meh"></i> Neutral Example
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Predictions -->
+    {% if recent_predictions %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-history"></i> Recent Predictions
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th style="width: 10%;">Time</th>
+                                    <th style="width: 50%;">Text</th>
+                                    <th style="width: 15%;">Sentiment</th>
+                                    <th style="width: 15%;">Confidence</th>
+                                    <th style="width: 10%;">Source</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pred in recent_predictions %}
+                                <tr>
+                                    <td><small>{{ pred.created_at|date:"H:i" }}</small></td>
+                                    <td>{{ pred.text|truncatewords:15 }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if pred.predicted_sentiment == 'positive' %}success{% elif pred.predicted_sentiment == 'negative' %}danger{% else %}secondary{% endif %}">
+                                            {{ pred.predicted_sentiment|title }}
+                                        </span>
+                                    </td>
+                                    <td>{{ pred.confidence_score|floatformat:2 }}</td>
+                                    <td><small class="text-muted">{{ pred.source }}</small></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Processing Modal -->
+<div class="modal fade" id="processingModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-cogs"></i> Analyzing Text...</h5>
+            </div>
+            <div class="modal-body text-center py-5">
+                <div class="spinner-border text-primary mb-3" style="width: 4rem; height: 4rem;" role="status">
+                    <span class="visually-hidden">Processing...</span>
+                </div>
+                <h5 id="processingStatus">Preprocessing text...</h5>
+                <p class="text-muted">This will take just a moment.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Character count
+document.getElementById('inputText').addEventListener('input', function() {
+    document.getElementById('charCount').textContent = this.value.length;
+});
+
+// Example buttons
+document.querySelectorAll('.example-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.getElementById('inputText').value = this.dataset.text;
+        document.getElementById('charCount').textContent = this.dataset.text.length;
+    });
+});
+
+// Form submission
+document.getElementById('predictionForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    // Show processing modal
+    const processingModal = new bootstrap.Modal(document.getElementById('processingModal'));
+    processingModal.show();
+    
+    // Predict
+    fetch('{% url "core:predict_sentiment" %}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        processingModal.hide();
+        
+        if (data.status === 'success') {
+            showResult(data.results);
+        } else {
+            alert('Prediction failed: ' + data.message);
+            console.error(data);
+        }
+    })
+    .catch(error => {
+        processingModal.hide();
+        alert('Network error: ' + error.message);
+        console.error(error);
+    });
+});
+
+function showResult(results) {
+    const sentiment = results.sentiment;
+    const confidence = results.confidence;
+    const probabilities = results.probabilities;
+    
+    // Set header color
+    const header = document.getElementById('resultHeader');
+    if (sentiment === 'positive') {
+        header.className = 'card-header bg-success text-white';
+    } else if (sentiment === 'negative') {
+        header.className = 'card-header bg-danger text-white';
+    } else {
+        header.className = 'card-header bg-secondary text-white';
+    }
+    
+    // Build result HTML
+    const resultBody = document.getElementById('resultBody');
+    resultBody.innerHTML = `
+        <div class="text-center mb-4">
+            <h1 class="display-1">
+                ${sentiment === 'positive' ? '😊' : sentiment === 'negative' ? '😞' : '😐'}
+            </h1>
+            <h3 class="mb-2">
+                <span class="badge bg-${sentiment === 'positive' ? 'success' : sentiment === 'negative' ? 'danger' : 'secondary'} p-3">
+                    ${sentiment.toUpperCase()}
+                </span>
+            </h3>
+            <h5>Confidence: <strong>${(confidence * 100).toFixed(1)}%</strong></h5>
+        </div>
+        
+        <hr>
+        
+        <div class="mb-3">
+            <h6><strong>All Class Probabilities:</strong></h6>
+            <div class="mb-2">
+                <small>Positive:</small>
+                <div class="progress" style="height: 25px;">
+                    <div class="progress-bar bg-success" style="width: ${(probabilities.positive * 100).toFixed(1)}%">
+                        ${(probabilities.positive * 100).toFixed(1)}%
+                    </div>
+                </div>
+            </div>
+            <div class="mb-2">
+                <small>Negative:</small>
+                <div class="progress" style="height: 25px;">
+                    <div class="progress-bar bg-danger" style="width: ${(probabilities.negative * 100).toFixed(1)}%">
+                        ${(probabilities.negative * 100).toFixed(1)}%
+                    </div>
+                </div>
+            </div>
+            <div class="mb-2">
+                <small>Neutral:</small>
+                <div class="progress" style="height: 25px;">
+                    <div class="progress-bar bg-secondary" style="width: ${(probabilities.neutral * 100).toFixed(1)}%">
+                        ${(probabilities.neutral * 100).toFixed(1)}%
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="alert alert-info mb-0">
+            <small>
+                <i class="fas fa-info-circle"></i> 
+                <strong>Processed in ${results.processing_time.toFixed(3)}s</strong><br>
+                Model: ${results.model_name} (${results.model_accuracy.toFixed(1)}% accuracy)<br>
+                Tokens: ${results.tokens.length} words after preprocessing
+            </small>
+        </div>
+    `;
+    
+    // Hide examples, show result
+    document.getElementById('examplesCard').style.display = 'none';
+    document.getElementById('resultCard').style.display = 'block';
+    
+    // Scroll to result
+    document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+
+{% block title %}Model Details - {{ model.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="max-width: 1200px;">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-brain"></i> Model Details</h2>
+            <p class="text-muted">{{ model.name }}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'core:model_evaluation' model.pk %}" class="btn btn-info me-2">
+                <i class="fas fa-chart-bar"></i> View Evaluation
+            </a>
+            <a href="{% url 'core:train_model' model.dataset.pk %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Training
+            </a>
+        </div>
+    </div>
+
+    <!-- Performance Metrics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card" style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);">
+                <div class="card-body text-center text-white">
+                    <h6 class="mb-1">Test Accuracy</h6>
+                    <h2>{{ model.accuracy|floatformat:4 }}</h2>
+                    <small>{{ model.accuracy|floatformat:2 }}%</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card" style="background: linear-gradient(135deg, #059669 0%, #047857 100%);">
+                <div class="card-body text-center text-white">
+                    <h6 class="mb-1">Precision</h6>
+                    <h2>{{ model.precision|floatformat:4 }}</h2>
+                    <small>Weighted</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card" style="background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);">
+                <div class="card-body text-center text-white">
+                    <h6 class="mb-1">Recall</h6>
+                    <h2>{{ model.recall|floatformat:4 }}</h2>
+                    <small>Weighted</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card" style="background: linear-gradient(135deg, #d97706 0%, #b45309 100%);">
+                <div class="card-body text-center text-white">
+                    <h6 class="mb-1">F1-Score</h6>
+                    <h2>{{ model.f1_score|floatformat:4 }}</h2>
+                    <small>Weighted</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Training Details & Model Info -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-cogs"></i> Training Details
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <th style="width: 50%;">Training Samples:</th>
+                            <td>{{ parameters.train_samples|default:"N/A" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Test Samples:</th>
+                            <td>{{ parameters.test_samples|default:"N/A" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Original Features:</th>
+                            <td>{{ parameters.n_features_original|default:300 }}</td>
+                        </tr>
+                        <tr>
+                            <th>PCA Components:</th>
+                            <td>{{ parameters.n_components|default:"N/A" }}</td>
+                        </tr>
+                        <tr>
+                            <th>PCA Variance Explained:</th>
+                            <td>{{ parameters.pca_variance|floatformat:2 }}%</td>
+                        </tr>
+                        <tr>
+                            <th>Training Time:</th>
+                            <td>{{ parameters.training_time|floatformat:2 }}s</td>
+                        </tr>
+                        <tr>
+                            <th>Train Accuracy:</th>
+                            <td>{{ parameters.train_accuracy|floatformat:4 }}</td>
+                        </tr>
+                        {% if parameters.apply_smote %}
+                        <tr class="table-success">
+                            <th>SMOTE Applied:</th>
+                            <td>
+                                <span class="badge bg-success">Yes</span><br>
+                                <small class="text-muted">
+                                    {{ parameters.n_samples_before_smote }} → {{ parameters.n_samples_after_smote }} samples
+                                </small>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-brain"></i> Model Information
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <th style="width: 50%;">Algorithm:</th>
+                            <td><span class="badge bg-primary">{{ model.algorithm|upper }}</span></td>
+                        </tr>
+                        <tr>
+                            <th>Kernel:</th>
+                            <td>{{ parameters.kernel|default:"rbf"|upper }}</td>
+                        </tr>
+                        <tr>
+                            <th>C Parameter:</th>
+                            <td>{{ parameters.C|default:1.0 }}</td>
+                        </tr>
+                        <tr>
+                            <th>Max Iterations:</th>
+                            <td>{{ parameters.max_iter|default:1000 }}</td>
+                        </tr>
+                        <tr>
+                            <th>Support Vectors:</th>
+                            <td>{{ parameters.n_support_vectors|default:"N/A" }}</td>
+                        </tr>
+                        <tr>
+                            <th>SV Ratio:</th>
+                            <td>{{ parameters.support_vector_ratio|floatformat:2 }}%</td>
+                        </tr>
+                        <tr>
+                            <th>Created:</th>
+                            <td>{{ model.created_at|date:"Y-m-d H:i" }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Model File Info -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <i class="fas fa-file-archive"></i> Model File Information
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>File Path:</strong></p>
+                            <code>{{ model.model_file }}</code>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Dataset:</strong></p>
+                            <a href="{% url 'core:dataset_detail' model.dataset.pk %}">
+                                {{ model.dataset.name }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Parameters JSON (Collapsible) -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <a class="text-decoration-none text-dark" data-bs-toggle="collapse" href="#parametersCollapse">
+                        <i class="fas fa-code"></i> Full Parameters (JSON) 
+                        <i class="fas fa-chevron-down float-end"></i>
+                    </a>
+                </div>
+                <div class="collapse" id="parametersCollapse">
+                    <div class="card-body">
+                        <pre class="bg-light p-3 rounded" style="max-height: 400px; overflow-y: auto;"><code>{{ parameters|safe }}</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ dataset.name }} - SentiFusion{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-database"></i> {{ dataset.name }}</h2>
+            <p class="text-muted">{{ dataset.description|default:"No description" }}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'core:dataset_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+            <a href="{% url 'core:dataset_delete' dataset.pk %}" class="btn btn-danger">
+                <i class="fas fa-trash"></i> Delete
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h3>{{ total_reviews }}</h3>
+                    <p class="mb-0"><i class="fas fa-comments"></i> Total Reviews</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h3>{{ labeled_reviews }}</h3>
+                    <p class="mb-0"><i class="fas fa-tags"></i> Labeled</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h3>{{ preprocessed_reviews }}</h3>
+                    <p class="mb-0"><i class="fas fa-broom"></i> Preprocessed</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h3>{{ models.count }}</h3>
+                    <p class="mb-0"><i class="fas fa-brain"></i> Models</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <a href="{% url 'core:pre_analysis' dataset.pk %}" class="btn btn-outline-info w-100">
+                <i class="fas fa-search"></i> 1. Pre-Analysis (Raw Data)
+            </a>
+        </div>
+        <div class="col-md-4 mb-3">
+            <a href="{% url 'core:dataset_preprocess' dataset.pk %}" class="btn btn-outline-primary w-100">
+                <i class="fas fa-broom"></i> 2. Preprocess Dataset
+            </a>
+        </div>
+        <div class="col-md-4 mb-3">
+            {% if dataset.is_preprocessed %}
+            <a href="{% url 'core:preprocessing_results' dataset.pk %}" class="btn btn-outline-success w-100">
+                <i class="fas fa-eye"></i> 3. View Details
+            </a>
+            {% else %}
+            <button class="btn btn-outline-secondary w-100" disabled>
+                <i class="fas fa-eye"></i> 3. View Details
+            </button>
+            {% endif %}
+        </div>
+        <div class="col-md-4 mb-3">
+            {% if dataset.is_preprocessed %}
+            <a href="{% url 'core:preliminary_analysis' dataset.pk %}" class="btn btn-outline-warning w-100">
+                <i class="fas fa-chart-line"></i> 4. Post-Analysis
+            </a>
+            {% else %}
+            <button class="btn btn-outline-secondary w-100" disabled>
+                <i class="fas fa-chart-line"></i> 4. Post-Analysis
+            </button>
+            {% endif %}
+        </div>
+        <div class="col-md-4 mb-3">
+            {% if dataset.is_preprocessed %}
+            <a href="{% url 'core:dataset_label' dataset.pk %}" class="btn btn-outline-danger w-100">
+                <i class="fas fa-tags"></i> 5. Label Reviews
+            </a>
+            {% else %}
+            <button class="btn btn-outline-secondary w-100" disabled>
+                <i class="fas fa-tags"></i> 5. Label Reviews
+            </button>
+            {% endif %}
+        </div>
+        <div class="col-md-4 mb-3">
+            {% if dataset.is_preprocessed and labeled_reviews >= 100 %}
+            <a href="{% url 'core:train_model' dataset.pk %}" class="btn btn-outline-success w-100">
+                <i class="fas fa-cogs"></i> 6. Train Model
+            </a>
+            {% else %}
+            <button class="btn btn-outline-secondary w-100" disabled
+                    title="{% if not dataset.is_preprocessed %}Preprocess first{% else %}Need {{ 100|add:labeled_reviews|add:"-"|add:labeled_reviews }} more labels{% endif %}">
+                <i class="fas fa-cogs"></i> 6. Train Model
+            </button>
+            {% endif %}
+        </div>
+        
+        <!-- NEW: Batch Prediction -->
+        <div class="col-md-4 mb-3">
+            {% if trained_models > 0 %}
+            <a href="{% url 'core:batch_prediction' dataset.pk %}" class="btn btn-outline-purple w-100">
+                <i class="fas fa-magic"></i> 7. Batch Prediction
+            </a>
+            {% else %}
+            <button class="btn btn-outline-secondary w-100" disabled
+                    title="Train a model first">
+                <i class="fas fa-magic"></i> 7. Batch Prediction
+            </button>
+            {% endif %}
+        </div>
+        
+        <!-- NEW: Real-time Prediction (Coming Soon) -->
+        <div class="col-md-4 mb-3">
+            {% if trained_models > 0 %}
+            <a href="{% url 'core:realtime_prediction' %}" class="btn btn-outline-info w-100">
+                <i class="fas fa-bolt"></i> 8. Real-time Predict
+            </a>
+            {% else %}
+            <button class="btn btn-outline-secondary w-100" disabled
+                    title="Train a model first">
+                <i class="fas fa-bolt"></i> 8. Real-time Predict
+            </button>
+            {% endif %}
+        </div>
+        
+        <!-- Evaluation -->
+        <div class="col-md-4 mb-3">
+            {% if trained_models > 0 %}
+            <a href="{% url 'core:model_evaluation' latest_model.pk %}" class="btn btn-outline-dark w-100">
+                <i class="fas fa-chart-bar"></i> 9. Evaluation
+            </a>
+            {% else %}
+            <button class="btn btn-outline-secondary w-100" disabled
+                    title="Train a model first">
+                <i class="fas fa-chart-bar"></i> 9. Evaluation
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Reviews -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-list"></i> Recent Reviews</span>
+                    {% if dataset.is_preprocessed %}
+                    <a href="{% url 'core:preprocessing_results' dataset.pk %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-eye"></i> View All Details
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if recent_reviews %}
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 5%;" class="text-center">#</th>
+                                    <th style="width: 35%;">Original Text (Raw)</th>
+                                    <th style="width: 35%;">Processed Text (Clean)</th>
+                                    <th style="width: 10%;" class="text-center">Tokens</th>
+                                    <th style="width: 15%;" class="text-center">Label</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for review in recent_reviews %}
+                                <tr>
+                                    <td class="text-center"><strong>{{ review.id }}</strong></td>
+
+                                    <!-- Original Text -->
+                                    <td>
+                                        <div style="max-height: 80px; overflow-y: auto; font-size: 0.9rem;">
+                                            {{ review.text|truncatewords:30 }}
+                                        </div>
+                                    </td>
+
+                                    <!-- Processed Text -->
+                                    <td>
+                                        {% if review.cleaned_text %}
+                                        <div style="max-height: 80px; overflow-y: auto;">
+                                            <code class="text-success" style="font-size: 0.85rem;">
+                                                        {{ review.cleaned_text|truncatewords:25 }}
+                                                    </code>
+                                        </div>
+                                        {% else %}
+                                        <small class="text-muted fst-italic">Not preprocessed</small>
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- Token Count -->
+                                    <td class="text-center">
+                                        {% if review.token_count > 0 %}
+                                        <span class="badge bg-info">{{ review.token_count }}</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">-</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- Label -->
+                                    <td class="text-center">
+                                        {% if review.label %}
+                                        <span
+                                            class="badge bg-{% if review.label == 'positive' %}success{% elif review.label == 'negative' %}danger{% else %}secondary{% endif %}">
+                                            {{ review.label|title }}
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-light text-dark">Unlabeled</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No reviews in this dataset</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endblock %}

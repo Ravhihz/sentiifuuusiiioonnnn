@@ -1,0 +1,244 @@
+/* Purple button variant */
+.btn-outline-purple {
+    color: #7c3aed;
+    border-color: #7c3aed;
+}
+
+.btn-outline-purple:hover {
+    color: #fff;
+    background-color: #7c3aed;
+    border-color: #7c3aed;
+}
+
+.btn-purple {
+    color: #fff;
+    background-color: #7c3aed;
+    border-color: #7c3aed;
+}
+
+.btn-purple:hover {
+    color: #fff;
+    background-color: #6d28d9;
+    border-color: #6d28d9;
+}
+
+/* ===== Loading States ===== */
+.btn-loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.btn-loading::after {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: 50%;
+    left: 50%;
+    margin-left: -8px;
+    margin-top: -8px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spinner 0.6s linear infinite;
+}
+
+@keyframes spinner {
+    to { transform: rotate(360deg); }
+}
+
+/* ===== Smooth Transitions ===== */
+.card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.btn {
+    transition: all 0.2s;
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+/* ===== Better Form Inputs ===== */
+.form-control:focus,
+.form-select:focus {
+    border-color: #4e73df;
+    box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+}
+
+/* ===== Pulse Animation for Active Items ===== */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.pulse {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+/* ===== Better Scrollbar ===== */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* ===== Skeleton Loading ===== */
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s ease-in-out infinite;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.skeleton-text {
+    height: 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: 4px;
+}
+
+.skeleton-title {
+    height: 1.5rem;
+    width: 60%;
+    margin-bottom: 1rem;
+    border-radius: 4px;
+}
+
+/* ===== Empty States ===== */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+/* ===== Success/Error States ===== */
+.state-success {
+    border-left: 4px solid #28a745;
+}
+
+.state-error {
+    border-left: 4px solid #dc3545;
+}
+
+.state-warning {
+    border-left: 4px solid #ffc107;
+}
+
+.state-info {
+    border-left: 4px solid #17a2b8;
+}
+
+/* ===== Badge Improvements ===== */
+.badge {
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+}
+
+/* ===== Better Table Hover ===== */
+.table-hover tbody tr:hover {
+    background-color: rgba(0,0,0,0.03);
+    cursor: pointer;
+}
+
+/* ===== Fade In Animation ===== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* ===== Progress Bar Animations ===== */
+.progress-bar {
+    transition: width 0.6s ease;
+}
+
+.progress-bar-animated {
+    animation: progress-bar-stripes 1s linear infinite;
+}
+
+@keyframes progress-bar-stripes {
+    0% { background-position: 1rem 0; }
+    100% { background-position: 0 0; }
+}
+
+/* ===== Status Indicators ===== */
+.status-dot {
+    height: 10px;
+    width: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+}
+
+.status-dot.active {
+    background-color: #28a745;
+    box-shadow: 0 0 0 rgba(40, 167, 69, 0.4);
+    animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+    0% {
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+    }
+}
+
+/* ===== Responsive Improvements ===== */
+@media (max-width: 768px) {
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+}
+
+/* ===== Dark Mode Support (Optional) ===== */
+@media (prefers-color-scheme: dark) {
+    /* Add dark mode styles if needed */
+}
