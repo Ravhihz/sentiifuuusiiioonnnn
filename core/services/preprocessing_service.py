@@ -9,8 +9,6 @@ class PreprocessingService:
     """Service for preprocessing dataset"""
 
     def __init__(self):
-        # Don't initialize feature_extractor here!
-        # It needs fasttext_model which we don't have yet
         pass
 
     def preprocess_dataset(self, dataset: Dataset, use_stemming: bool = True) -> Dict:
@@ -139,13 +137,40 @@ class PreprocessingService:
         time_breakdown['fasttext_training'] = time.time() - ft_start
         print(f"[STEP 3] Complete: {time_breakdown['fasttext_training']:.2f}s")
         
-        # Step 4: Feature extraction
-        fe_start = time.time()
-        print(f"[STEP 4] Extracting features...")
+        # Step 3.5: Dictionary Extension
+        dict_start = time.time()
+        print(f"[STEP 3.5] Extending sentiment dictionary...")
         
-        # Import and create FeatureExtractor with trained model
+        from ..services.dictionary_service import DictionaryService
+        dict_service = DictionaryService()
+        
+        extended_dict = dict_service.extend_dictionary(
+            dataset=dataset,
+            fasttext_model=fasttext_model,
+            N=10,
+            threshold=0.7
+        )
+        
+        # Save extended dictionary
+        dict_filepath = dict_service.save_extended_dictionary(extended_dict, dataset)
+        
+        # Merge original + extended dictionary
+        merged_dict = {**dict_service.sentiment_dict, **extended_dict}
+        
+        time_breakdown['dictionary_extension'] = time.time() - dict_start
+        print(f"[STEP 3.5] Complete: {time_breakdown['dictionary_extension']:.2f}s")
+        print(f"[STEP 3.5] Total dictionary size: {len(merged_dict)} words")
+        
+        # Step 4: Feature extraction WITH sentiment weighting
+        fe_start = time.time()
+        print(f"[STEP 4] Extracting weighted features...")
+        
+        # Import and create FeatureExtractor with trained model AND sentiment dict
         from ..preprocessing.feature_extractor import FeatureExtractor
-        feature_extractor = FeatureExtractor(fasttext_model)
+        feature_extractor = FeatureExtractor(
+            fasttext_model=fasttext_model,
+            sentiment_dict=merged_dict  # Pass sentiment dictionary for weighting
+        )
         
         # Update with actual feature vectors
         processed_reviews = ProcessedReview.objects.filter(review__dataset=dataset)
@@ -178,6 +203,8 @@ class PreprocessingService:
             'avg_length_after': avg_length_after,
             'use_stemming': use_stemming,
             'processing_time': round(total_time, 2),
+            'dictionary_size': len(merged_dict),
+            'extended_words': len(extended_dict),
             'time_breakdown': {k: round(v, 2) for k, v in time_breakdown.items()}
         }
         dataset.save()
