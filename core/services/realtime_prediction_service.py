@@ -5,9 +5,11 @@ import os
 from typing import Dict, Tuple
 from django.conf import settings
 
+from ..preprocessing.text_preprocessor import TextPreprocessor
+from ..preprocessing.feature_extractor import FeatureExtractor
+
 from ..models import SentimentModel, PredictionRequest
-from .text_preprocessor import TextPreprocessor
-from .feature_extractor import FeatureExtractor
+
 
 
 class RealtimePredictionService:
@@ -86,10 +88,10 @@ class RealtimePredictionService:
             print(f"[FASTTEXT] Loading from: {fasttext_path}")
             fasttext_model = FastText.load(fasttext_path)
             
-            self.feature_extractor = FeatureExtractor(fasttext_model)
+            self.feature_extractor = FeatureExtractor(fasttext_model) # type: ignore
         
         # Extract features
-        features = self.feature_extractor.extract_features([tokens])
+        features = self.feature_extractor.extract_features([tokens]) # type: ignore
         
         print(f"[FEATURES] Shape: {features.shape}")
         
@@ -100,7 +102,7 @@ class RealtimePredictionService:
         text: str,
         model: SentimentModel,
         source: str = 'web',
-        ip_address: str = None,
+        ip_address: str = None, # type: ignore
         save_to_db: bool = True
     ) -> Dict:
         """
@@ -189,7 +191,7 @@ class RealtimePredictionService:
     
     def get_prediction_history(
         self, 
-        model: SentimentModel = None,
+        model: SentimentModel = None, # type: ignore
         limit: int = 50
     ) -> list:
         """
